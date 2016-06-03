@@ -77,10 +77,13 @@ class ModbusTCPClient(object):
                 decoded_data = BinaryPayloadDecoder.fromRegisters(list(reversed(read_data.registers)), endian='>')
                 register['value'] = decoded_data.decode_32bit_float()
 
-            if register['type'] == '16bit_int':
+            elif register['type'] == '16bit_int':
                 read_data = self.client.read_holding_registers(register['address'], 1, unit=1)
                 decoded_data = BinaryPayloadDecoder.fromRegisters((read_data.registers), endian='>')
                 register['value'] = decoded_data.decode_16bit_int()
+
+            else:
+                Print(register['type'], 'data type not supported')
 
     def write(self):
 
