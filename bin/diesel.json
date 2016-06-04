@@ -1,1 +1,0 @@
-{"ModbusRegisters": [{"ip_add": "192.168.253.154", "mod_add": "42", "name": "kW", "handle_id": 0, "type": "32bit_float"}, {"ip_add": "192.168.253.154", "mod_add": "44", "name": "kVAR", "handle_id": 0, "ype": "32bit_float"}]}

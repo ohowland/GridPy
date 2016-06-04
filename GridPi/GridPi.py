@@ -1,28 +1,21 @@
 from ModbusServer import Client
 from time import sleep
-import threading
+from threading import Thread
 
 if __name__ == '__main__':
 
-    jobs = list()
+    sysconfig_path = '/home/pi/Public/GitHub/GridPi/bin/SysConfig.json'
+    
     clients = list()
-    clients[0] = Client('C:/Users/Owen/Git/GridPi/bin/Diesel.json')
-    clients[1] = Client('C:/Users/Owen/Git/GridPi/bin/BattInv.json')
 
-    for c in clients:
-        c.init_connection()
-        thread = threading.Thread(target=c.read())
-        jobs.append(thread)
-
+    clients.append(Client('Diesel1',sysconfig_path))
+    clients.append(Client('BatteryInverter1',sysconfig_path))
+    clients.append(Client('GridIntertie1',sysconfig_path))
+    
     while True:
-
-        for j in jobs:
-            j.start()
-        for j in jobs:
-            j.join()
-        print('update complete')
-
-    for c in clients:
-        print(c.get('kW'))
-        print(c.get('kVAR'))
-    sleep(5)
+        
+        for c in clients:
+            for i in range(0,len(c.reg)):
+                print(c.processname, c.reg[i]['name'],':',c.reg[i]['value'])
+        print('-----------------------------')
+        sleep(5)
