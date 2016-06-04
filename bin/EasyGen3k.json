@@ -1,0 +1,25 @@
+{
+    "ModbusConfiguration": {
+	"diesel": {
+	    "name": "EasyGen3k",
+   	    "ip_add": "192.168.253.165",
+            "endian": ">",
+            "software_rev": 1.0,
+            "registers": [
+                {
+                    "mod_add": 50052,
+                    "name": "kW",
+                    "scale": 0.001,
+                    "type": "32bit_int"
+                },
+                {
+                    "mod_add": 50058,
+                    "name": "kVAR",
+                    "scale": 0.001,
+                    "type": "32bit_int"
+                }
+            ],
+            "update_rate": 1
+        }
+    }
+}

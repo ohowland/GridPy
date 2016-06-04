@@ -1,7 +1,8 @@
 {
-    "BatteryInverter1": {
+    "batteryinverter1": {
         "endian": ">",
         "ip_add": "192.168.253.162",
+        "name": "GFIPM3k",
         "registers": [
             {
                 "mod_add": 121,
@@ -16,11 +17,13 @@
                 "type": "32bit_float"
             }
         ],
+        "software_rev": 1.0,
         "update_rate": 1
     },
-    "Diesel1": {
+    "diesel1": {
         "endian": ">",
         "ip_add": "192.168.253.165",
+        "name": "EasyGen3k",
         "registers": [
             {
                 "mod_add": 50052,
@@ -35,11 +38,13 @@
                 "type": "32bit_int"
             }
         ],
+        "software_rev": 1.0,
         "update_rate": 1
     },
-    "GridIntertie1": {
+    "gridintertie1": {
         "endian": ">",
         "ip_add": "192.168.253.154",
+        "name": "SEL547",
         "registers": [
             {
                 "mod_add": 42,

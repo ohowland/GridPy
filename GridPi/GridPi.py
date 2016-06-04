@@ -1,26 +1,22 @@
 import json
+import os
 from Modbus import Client
 from time import sleep
 
 if __name__ == '__main__':
 
-    #TODO: base on local path.
-    #sysconfig_path = '/home/pi/Public/GitHub/GridPi/bin/SysConfig.json'
-    sysconfig_path = 'C:/Users/Owen/Git/GridPi/bin/SysConfig.json'
-
+    sysconfig_path = os.path.join(os.path.dirname(os.getcwd()), 'bin/sysconfig.json')
+    
     with open(sysconfig_path, 'r') as outfile:
         sysconfig = json.loads(outfile.read())
 
     clients = list()
-
-for client in sysconfig:
-    clients.append(Client('Diesel1',sysconfig_path))
-    clients.append(Client('BatteryInverter1',sysconfig_path))
-    clients.append(Client('GridIntertie1',sysconfig_path))
+    for process_name in sysconfig:
+        clients.append(Client(process_name, sysconfig_path))
     
     while True:
         for c in clients:
             for keys, values in c.cvt.items():
-                print(c.process_name, keys, values)
+                print(c.process_name, round(values,2), keys)
         print('-------------------------')
         sleep(5)

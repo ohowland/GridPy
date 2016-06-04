@@ -1,8 +1,8 @@
 import json
+import time
 from pymodbus3.client.sync import ModbusTcpClient
 from pymodbus3.payload import BinaryPayloadDecoder
 from threading import Thread
-from time import sleep
 
 
 class Client(Thread):
@@ -40,8 +40,9 @@ class Client(Thread):
         self.reg = tuple()
         self.prop = dict()
         self.cvt = dict()
+        self.timestamp = str()
 
-        # CONFIGURE MODBUS CLIENT
+        #CONFIGURE MODBUS CLIENT
         with open(self.sysconfig_path, 'r') as outfile:
             raw_reg = json.loads(outfile.read())
 
@@ -56,14 +57,14 @@ class Client(Thread):
         for register in self.reg:
             self.cvt.update({register['name']: 0})
 
-        # LAUNCH MODBUS CLIENT
+        #LAUNCH MODBUS CLIENT
         try:
             self.client = ModbusTcpClient(self.prop['ip_add'])
             self.client.connect()
         except:
             print('modbus error')
 
-        # START PROCESS
+        #START PROCESS
         print(self.prop)
         print(self.cvt)
         self.start()
@@ -75,7 +76,7 @@ class Client(Thread):
 
         while True:
             self.update()
-            sleep(self.prop['update_rate'])
+            time.sleep(self.prop['update_rate'])
 
     def update(self):
 
@@ -89,23 +90,25 @@ class Client(Thread):
                     read_data = self.client.read_holding_registers(reg['mod_add'], 2, unit=1)
                     decoded_data = BinaryPayloadDecoder.from_registers(list(reversed(read_data.registers)),
                                                                        endian=self.prop['endian'])
-                    self.cvt['value'] = decoded_data.decode_32bit_float() * reg['scale']
+                    self.cvt[reg['name']] = decoded_data.decode_32bit_float() * reg['scale']
 
                 elif reg['type'] == '32bit_int':
                     read_data = self.client.read_holding_registers(reg['mod_add'], 2, unit=1)
                     decoded_data = BinaryPayloadDecoder.from_registers(read_data.registers, endian=self.prop['endian'])
-                    self.cvt['value'] = decoded_data.decode_32bit_int() * reg['scale']
+                    self.cvt[reg['name']] = decoded_data.decode_32bit_int() * reg['scale']
 
                 elif reg['type'] == '16bit_int':
                     read_data = self.client.read_holding_registers(reg['mod_add'], 1, unit=1)
                     decoded_data = BinaryPayloadDecoder.from_registers(read_data.registers, endian=self.prop['endian'])
-                    self.cvt['value'] = decoded_data.decode_16bit_int() * reg['scale']
+                    self.cvt[reg['name']] = decoded_data.decode_16bit_int() * reg['scale']
 
                 else:
                     print(reg['type'], 'data type not supported')
 
             except (AttributeError):
                 print(self.processname, 'read error')
+                            
+        self.timestamp = time.ctime()
 
     def write(self):
 
