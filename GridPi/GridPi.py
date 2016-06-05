@@ -18,5 +18,5 @@ if __name__ == '__main__':
         for c in clients:
             for keys, values in c.cvt.items():
                 print(c.process_name, round(values,2), keys)
-        print('-------------------------')
-        sleep(5)
+            print('-------------------------')
+        sleep(60)
