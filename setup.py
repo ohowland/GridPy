@@ -4,16 +4,16 @@ except ImportError:
 	from distutils.core import setup
 
 config = {
-	'description': 'My Project',
+	'description': 'GridPi',
 	'author': 'Owen Edgerton',
-	'url': 'URL to get it at.',
-	'download_url': 'where to download it.',
+	'url': 'https://github.com/ohowland/GridPi',
+	'download_url': 'https://github.com/ohowland/GridPi',
 	'author_email': 'ohowland@gmail.com',
 	'version': '0.1',
-	'install_requires': ['nose'],
+	'install_requires': ['nose','pymodbus3'],
 	'packages': ['NAME'],
 	'scripts': [],
-	'name': 'projectname'
+	'name': 'GridPi'
 }
 
 setup(**config)
