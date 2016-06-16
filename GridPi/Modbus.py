@@ -1,85 +1,96 @@
+"""Modbus.py is an extension of pymodbus3 and the threading module.
+    This module contains a modbus Client and Server class.
+
+"""
 import json
 import time
 from pymodbus3.client.sync import ModbusTcpClient
 from pymodbus3.payload import BinaryPayloadDecoder
-from threading import Thread
+import threading
 
 
-class Client(Thread):
-    """ModbusTCPClient polls a Modbus address
-    for data returns as dictionary
+class Client(threading.Thread):
+    """Define Tag engine to poll MODBUS servers.
 
-    PARAMETERS:
-        self.sysconfig_path =
-        self.process_name =
-        self.reg = [{
-        'name': 'modbus register name',
-        'ip_add': 'host ip address',
-        'mod_add': modbus register address,
-        'type': '32bit_float, 16bit_int',
-        'scale' : 'scaling value applied to register'
-        }]
-        self.cvt = {'register name_1: current value_1, ...
-                    'register name_N: current value_N}
-        self.props = ({'ip_add': str(), 'endian': str(), update_rate: int()
-        ip_add = ip address of target
-        endian = endianess of target's registers
-        update rate = rate of target polling
-
-        self.client = pyModbus3 Modbus TCP client object
-
-        """
+    """
 
     def __init__(self, process_name, sysconfig_path):
-        Thread.__init__(self)
-        self.daemon = True
+        """ Client expects a process_name by which it can be identified,
+            and a path to a json configuration file containing dictionaries
+            with key = self.process_name and values = 'register', 'ip_add',
+            'endian', 'update_rate'.
 
+            @props sysconfig_path: path to the json configuration file.
+            @props process_name: name of this process thread.
+            @props reg: [{
+                'name': 'modbus register name',
+                'mod_add': modbus register address,
+                'type': '32bit_float, 16bit_int',
+                'scale' : 'scaling value applied to register'
+                }]
+            @props cvt: current value table as dict():
+                    ('register name_1: current value_1, ...
+                     'register name_N: current value_N}
+            @props props: MODBUS client properties
+                    ({'ip_addess': str(), 'endian': str(), update_rate: int()}
+            @props client: pyModbus3 Modbus TCP client object
+
+        """
+        threading.Thread.__init__(self)
+        
+        # Initiate properties
+        self.daemon = True
         self.process_name = process_name
         self.sysconfig_path = sysconfig_path
-
         self.reg = tuple()
         self.prop = dict()
         self.cvt = dict()
         self.timestamp = str()
 
-        #CONFIGURE MODBUS CLIENT
+        # Configure MODBUS client
         with open(self.sysconfig_path, 'r') as outfile:
             raw_reg = json.loads(outfile.read())
 
         self.prop.update({'ip_add': raw_reg[self.process_name]['ip_add'],
                           'endian': raw_reg[self.process_name]['endian'],
                           'update_rate': raw_reg[self.process_name]['update_rate']
-                           })
+                          })
 
         self.reg = raw_reg[self.process_name]['registers']
 
-        #BUILD CURRENT VALUE TABLE
+        # Build 'Current Value Table' (CVT)
         for register in self.reg:
             self.cvt.update({register['name']: 0})
 
-        #LAUNCH MODBUS CLIENT
+    def __del__(self):
+        """Teardown
+
+        """
+
+    def run(self):
+        """ Connect to target and maintain client while loop.
+
+        """
         try:
             self.client = ModbusTcpClient(self.prop['ip_add'])
             self.client.connect()
         except:
             print('modbus error')
 
-        #START PROCESS
-        print(self.prop)
-        print(self.cvt)
-        self.start()
+            # TODO: define how application closes.
+            exit()
 
-    def __del__(self):
-        """Teardown"""
-
-    def run(self):
-
+        # START PROCESS
         while True:
             self.update()
             time.sleep(self.prop['update_rate'])
 
     def update(self):
+        """
+        Poll MODBUS target server.
 
+        Store results in self.cvt
+        """
         for reg in self.reg:
 
             try:
@@ -105,11 +116,10 @@ class Client(Thread):
                 else:
                     print(reg['type'], 'data type not supported')
 
-            except (AttributeError):
-                print(self.processname, 'read error')
-                            
+            except AttributeError:
+                print(self.process_name, 'read error')
+
         self.timestamp = time.ctime()
 
     def write(self):
-
         """TODO: write holding registers"""

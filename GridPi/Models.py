@@ -1,55 +1,62 @@
-Class Asset(object):
-    def __init__(self, process_name):
-    """self.properties contains data from sys_config.
+class Asset(object):
+    """Basic asset in power system."""
 
-    """
-    # Asset Properties:
-    self.process_name = str()
-    self.frequency_rated = int()
-    self.voltage_rated = int()
-    self.cap_kw_pos_rated = int()
-    self.cap_kw_neg_rated = int()
-    self.cap_kvar_pos_rated = int()
-    self.cap_kvar_neg_rated = int()
-    
-    # Asset Status:
-    self.frequency = float()
-    self.voltage = float()
-    self.cap_kw_pos_avail = float()
-    self.cap_kw_neg_avail = float()
-    self.cap_kvar_pos_avail = float()
-    self.cap_kvar_neg_avail = float()
-    
-    self.alarm = bool()
-    self.warning = bool()
-    self.caution = bool()
-
-    # Asset Control
-    
-
-Class CtrlAsset(CtAsset)
     def __init__(self):
-        CtAsset.__init__(self)
 
-    # CtAsset Properties
+        # Asset Properties:
+        self.process_name = str()
+        self.freq_rated = int()
+        self.volt_rated = int()
+        self.cap_kw_pos_rated = int()
+        self.cap_kw_neg_rated = int()
+        self.cap_kvar_pos_rated = int()
+        self.cap_kvar_neg_rated = int()
 
-    # CtAsset Status
-    self.enabled
-    self.remote_ctrl_enable
+        # Asset Status:
+        self.freq = float()
+        self.volt = float()
+        self.cap_kw_pos_avail = float()
+        self.cap_kw_neg_avail = float()
+        self.cap_kvar_pos_avail = float()
+        self.cap_kvar_neg_avail = float()
 
-    # CtAsset Control
-    self.enable
-    self.run
-    self.clear_faults
+        self.alarm = bool(0)
+        self.warning = bool(0)
+        self.caution = bool(0)
+        self.online = bool(0)
+        self.on_system = bool(0)
 
-Class Diesel(CtAsset):
+        # Asset Control
+
+class CtrlAsset(Asset):
+
     def __init__(self):
-        CtAsset.__init__(self)
+        Asset.__init__(self)
 
-Class BatteryInverter(CtAsset):
-    def __init__(self):
-        CtAsset.__init__(self)
+        # CtAsset Properties
 
-Class GridIntertie(CtrlAssetAsset):
+        # CtAsset Status
+        self.enabled = bool(0)
+        self.remote_ctrl = bool(0)
+
+        # CtAsset Control
+        self.enable = bool(0)
+        self.run = bool(0)
+        self.clear_faults = bool(0)
+
+class GFAsset(CtrlAsset):
+
     def __init__(self):
-        CtrlAssetAsset.__init__(self)
+        CtrlAsset.__init__(self)
+
+        self.grid_forming = bool(0)
+
+class Diesel(GFAsset):
+
+    def __init__(self):
+        GFAsset.__init__(self)
+
+class BatteryInverter(GFAsset):
+
+    def __init__(self):
+        GFAsset.__init__(self)
