@@ -1,10 +1,11 @@
 class Asset(object):
-    """Basic asset in power system."""
+    """Basic asset in power system.
 
+    """
     def __init__(self):
 
         # Asset Properties:
-        self.process_name = str()
+        self.process_name = None
         self.freq_rated = int()
         self.volt_rated = int()
         self.cap_kw_pos_rated = int()
@@ -19,14 +20,14 @@ class Asset(object):
         self.cap_kw_neg_avail = float()
         self.cap_kvar_pos_avail = float()
         self.cap_kvar_neg_avail = float()
-
-        self.alarm = bool(0)
-        self.warning = bool(0)
-        self.caution = bool(0)
-        self.online = bool(0)
-        self.on_system = bool(0)
+        self.alarm = False
+        self.warning = False
+        self.caution = False
+        self.online = False
+        self.on_system = False
 
         # Asset Control
+
 
 class CtrlAsset(Asset):
 
@@ -36,13 +37,15 @@ class CtrlAsset(Asset):
         # CtAsset Properties
 
         # CtAsset Status
-        self.enabled = bool(0)
-        self.remote_ctrl = bool(0)
+        self.kw = float()
+        self.kvar = float()
+        self.enabled = False
+        self.remote_ctrl = False
 
         # CtAsset Control
-        self.enable = bool(0)
-        self.run = bool(0)
-        self.clear_faults = bool(0)
+        self.enable = False
+        self.run = False
+        self.clear_faults = False
 
 class GFAsset(CtrlAsset):
 
@@ -52,11 +55,6 @@ class GFAsset(CtrlAsset):
         self.grid_forming = bool(0)
 
 class Diesel(GFAsset):
-
-    def __init__(self):
-        GFAsset.__init__(self)
-
-class BatteryInverter(GFAsset):
 
     def __init__(self):
         GFAsset.__init__(self)

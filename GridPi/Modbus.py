@@ -13,12 +13,12 @@ from pymodbus3.payload import BinaryPayloadDecoder
 import threading
 
 
-class Client(threading.Thread):
+class Client(threading.Thread,):
     """Define Tag engine to poll MODBUS servers.
 
     """
 
-    def __init__(self, process_name, sysconfig_path):
+    def __init__(self, model):
         """ Client expects a process_name by which it can be identified,
         and a path to a json configuration file containing dictionaries
         with key = self.process_name and values = 'register', 'ip_add',
@@ -44,16 +44,12 @@ class Client(threading.Thread):
         """
         threading.Thread.__init__(self)
 
+        self.model = model
         # Initiate properties
         self.daemon = True #TODO: this may be threading in 2.7, daemon is method now?
-        self.process_name = process_name
-        self.sysconfig_path = sysconfig_path
+
         self.process_stop = False
         self.connected = False
-
-        self.reg = tuple()
-        self.prop = dict()
-        self.cvt = dict()
         self.timestamp = str()
 
         # Configure MODBUS client
@@ -83,10 +79,16 @@ class Client(threading.Thread):
         """
         self.connect()
 
-        while self.process_stop == False:
+        while self._process_stop == False:
             if self.connected == True:
-                self.update()
+                self._update()
             time.sleep(self.prop['update_rate'])
+
+    def stop(self):
+        """Stop and destroy the Client thread
+
+        """
+        self._process_stop
 
     def connect(self):
         """Connect to target MODBUS server.
@@ -107,7 +109,7 @@ class Client(threading.Thread):
         self.connected = False
         print('MODBUS CLIENT:', self.process_name, '-- process stopped')
 
-    def update(self):
+    def _update(self):
         """Poll MODBUS target server.
 
         Store results in self.cvt
