@@ -12,9 +12,6 @@
     b. Instantiate object
     c. Run
 
-Modbus
-Dispatch
-Models
 """
 
 import os
@@ -50,8 +47,17 @@ if __name__ == '__main__':
     for proc in proc_list:
         proc.comm_client.start()
 
+
+    for proc in proc_list:
         for x in range(0, 3):
-            time.sleep(5)
-            print(proc.comm_client.process_name, proc.comm_client.cvt)
+            time.sleep(2)
+            proc.update()
+            print(proc.process_name,': \n',
+                proc.kw, 'kW \n',
+                proc.kvar, 'kVAR \n',
+                proc.freq, 'Hz \n',
+                proc.volt, 'V \n')
+
+        proc.comm_client.stop()
 
 print('Ending GridPi')

@@ -7,13 +7,25 @@
       "registers": [
         {
           "mod_add": 42,
-          "name": "kW",
+          "name": "kw",
           "scale": 1.0,
           "type": "32bit_float"
         },
         {
           "mod_add": 44,
-          "name": "kVAR",
+          "name": "kvar",
+          "scale": 1.0,
+          "type": "32bit_float"
+        },
+        {
+          "mod_add": 64,
+          "name": "freq",
+          "scale": 1.0,
+          "type": "32bit_float"
+        },
+        {
+          "mod_add": 60,
+          "name": "volt",
           "scale": 1.0,
           "type": "32bit_float"
         }

@@ -123,6 +123,14 @@ class ModbusClient(threading.Thread):
                     )
                     self.cvt[reg['name']] = decoded_data.decode_32bit_int() * reg['scale']
 
+                elif reg['type'] == '32bit_uint':
+                    read_data = self.client.read_holding_registers(reg['mod_add'], 2, unit=1)
+                    decoded_data = BinaryPayloadDecoder.from_registers(
+                        read_data.registers,
+                        endian=self.config['endian']
+                    )
+                    self.cvt[reg['name']] = decoded_data.decode_32bit_uint() * reg['scale']
+
                 elif reg['type'] == '16bit_int':
                     read_data = self.client.read_holding_registers(reg['mod_add'], 1, unit=1)
                     decoded_data = BinaryPayloadDecoder.from_registers(
@@ -130,6 +138,14 @@ class ModbusClient(threading.Thread):
                         endian=self.config['endian']
                     )
                     self.cvt[reg['name']] = decoded_data.decode_16bit_int() * reg['scale']
+
+                elif reg['type'] == '16bit_uint':
+                    read_data = self.client.read_holding_registers(reg['mod_add'], 1, unit=1)
+                    decoded_data = BinaryPayloadDecoder.from_registers(
+                        read_data.registers,
+                        endian=self.config['endian']
+                    )
+                    self.cvt[reg['name']] = decoded_data.decode_16bit_uint() * reg['scale']
 
                 else:
                     print(reg['type'], 'data type not supported')

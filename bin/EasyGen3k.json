@@ -7,15 +7,27 @@
       "registers": [
         {
           "mod_add": 50052,
-          "name": "kW",
+          "name": "kw",
           "scale": 0.001,
           "type": "32bit_int"
         },
         {
           "mod_add": 50058,
-          "name": "kVAR",
+          "name": "kvar",
           "scale": 0.001,
           "type": "32bit_int"
+        },
+        {
+          "mod_add": 50006,
+          "name": "freq",
+          "scale": 0.01,
+          "type": "16bit_uint"
+        },
+        {
+          "mod_add": 50004,
+          "name": "volt",
+          "scale": 0.1,
+          "type": "32bit_uint"
         }
       ],
       "update_rate": 1

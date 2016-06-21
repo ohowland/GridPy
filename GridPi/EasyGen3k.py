@@ -22,6 +22,35 @@ class EasyGen3k(Models.Diesel):
         self.comm_client.stop()
         print('PROCESS INTERFACE:', self.process_name, '-- deconstructed')
 
+    def update(self):
+
+        # Data from comm_client:
+
+        # Numerics
+        self.freq = self.comm_client.cvt['freq']
+        self.volt= self.comm_client.cvt['volt']
+        self.kw = self.comm_client.cvt['kw']
+        self.kvar = self.comm_client.cvt['kvar']
+
+        # Booleans
+        self.online = False
+        self.on_system = True
+        self.enabled = True
+        self.remote_ctrl = False
+        self.grid_forming = False
+
+        # Status Numeric Calcs
+        self.cap_kw_pos_avail = self.cap_kw_pos_rated*int(self.enabled)
+        self.cap_kw_neg_avail = self.cap_kw_neg_rated*int(self.enabled)
+        self.cap_kvar_pos_avail = self.cap_kvar_pos_rated*int(self.enabled)
+        self.cap_kvar_neg_avail = self.cap_kvar_neg_rated*int(self.enabled)
+
+        #Status Boolean Calcs
+        self.alarm = False
+        self.warning = False
+        self.caution = False
+
+
 if __name__ == '__main__':
 
     EasyGen = EasyGen3k(
