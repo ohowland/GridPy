@@ -1,24 +1,32 @@
 {
-    "ModbusConfiguration": {
-        "gridintertie" : {
-	    "name" : "SEL547",
-	    "ip_add": "192.168.253.154",
-            "endian": ">", 
-            "registers": [
-                {
-                    "mod_add": 42, 
-                    "name": "kW", 
-                    "scale": 1.0, 
-                    "type": "32bit_float"
-                }, 
-                {
-                    "mod_add": 44, 
-                    "name": "kVAR", 
-                    "scale": 1.0, 
-                    "type": "32bit_float"
-                }
-            ], 
-            "update_rate": 1
+  "Grid Intertie_1": {
+    "interface_config": {
+      "ip_add": "192.168.253.154",
+      "endian": ">",
+      "software_rev": 1.0,
+      "registers": [
+        {
+          "mod_add": 42,
+          "name": "kW",
+          "scale": 1.0,
+          "type": "32bit_float"
+        },
+        {
+          "mod_add": 44,
+          "name": "kVAR",
+          "scale": 1.0,
+          "type": "32bit_float"
         }
-    }
+      ],
+      "update_rate": 1
+    },
+    "model_config": {
+      "cap_kva_rated": 20,
+      "cap_kw_pos_rated": 20,
+      "cap_kw_neg_rated": 0,
+      "cap_kvar_pos_rated": 12,
+      "cap_kvar_neg_rated": 12
+    },
+    "interface_class": "sel547"
+  }
 }

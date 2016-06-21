@@ -1,42 +1,51 @@
-import json
-import os
 import Models
+import Comm
+
 
 class EasyGen3k(Models.Diesel):
 
     def __init__(self, properties_dict):
         Models.Diesel.__init__(self)
 
-        self.process_name = properties_dict.keys[1]
-        self.model_config = properties_dict['ModelConfiguration']
-        self.interface_config = properties_dict['InterfaceConfiguration']
+        self.process_name = list(properties_dict.keys())[0]
+        self.comm_client = None
 
-        # Build 'Current Value Table' (CVT)
-        for register in self.interface_config['registers']:
-            self.cvt.update({register['name']: 0})
+        config = properties_dict[self.process_name]
 
-        #TODO: Map register fetch with
+        for key, value in config['model_config'].items():
+            if key in self.__dict__.keys():
+                self.__dict__[key] = value
 
-        def update(self): pass
+        self.comm_client = Comm.ModbusClient(self.process_name, config['interface_config'])
+
+    def __del__(self):
+        self.comm_client.stop()
+        print('PROCESS INTERFACE:', self.process_name, '-- deconstructed')
 
 if __name__ == '__main__':
 
     EasyGen = EasyGen3k(
         {
             'Diesel_1': {
-                'ModelConfiguration': {
-                    'kw_rated': 20
+                'model_config': {
+                    "cap_kw_pos_rated": 20,
+                    "cap_kw_neg_rated": 0,
+                    "cap_kvar_pos_rated": 12,
+                    "cap_kvar_neg_rated": 12,
+                    "not_in_dict": 42
                 },
-                'InterfaceConfiguration': {
+                'interface_config': {
                     'ip_add': '0.0.0.0',
                     'endian': '>',
                     'update_rate': 1,
-                    'registers': {
+                    'registers': [
+                        {
                         'name': 'kw',
                         'mod_add': 50052,
                         'scale': 0.001,
                         'type': '32bit_float'
-                    }
+                        }
+                    ]
                     }
                 }
         }

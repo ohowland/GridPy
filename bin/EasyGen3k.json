@@ -21,8 +21,12 @@
       "update_rate": 1
     },
     "model_config": {
-      "kw_rated": 20,
-      "kva_rated": 21
-    }
+      "cap_kva_rated": 20,
+      "cap_kw_pos_rated": 20,
+      "cap_kw_neg_rated": 0,
+      "cap_kvar_pos_rated": 12,
+      "cap_kvar_neg_rated": 12
+    },
+    "interface_class": "easygen3k"
   }
 }

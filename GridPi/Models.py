@@ -8,6 +8,7 @@ class Asset(object):
         self.process_name = None
         self.freq_rated = int()
         self.volt_rated = int()
+        self.cap_kva_rated = int()
         self.cap_kw_pos_rated = int()
         self.cap_kw_neg_rated = int()
         self.cap_kvar_pos_rated = int()
@@ -26,8 +27,9 @@ class Asset(object):
         self.online = False
         self.on_system = False
 
-        # Asset Control
+        self.model_type = None
 
+        # Asset Control
 
 class CtrlAsset(Asset):
 
@@ -58,3 +60,12 @@ class Diesel(GFAsset):
 
     def __init__(self):
         GFAsset.__init__(self)
+
+        self.model_type = 'diesel'
+
+class GridIntertie(GFAsset):
+
+    def __init__(self):
+        GFAsset.__init__(self)
+
+        self.model_type = 'gridintertie'

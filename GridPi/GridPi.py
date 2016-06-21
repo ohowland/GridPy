@@ -19,69 +19,39 @@ Models
 
 import os
 import json
-import EasyGen3k # eventually put this in an interface.py or __init__.py?
-
-def config_process(model, process, process_list):
-    process.process_name = model.keys[1]
-    process.model_config = model['model_config']
-    process.interface_config = model['interface_config']
-    return(process_list.append(process))
+import time
+import EasyGen3k, SEL547 # eventually put this in an interface.py or __init__.py?
 
 if __name__ == '__main__':
 
-    # Initialize
-    sysconfig_path = os.path.join(os.path.dirname(os.getcwd()), 'bin/sysconfig.json')
+    # Read system configuration
+    sysconfig_path = os.path.join(os.path.dirname(os.getcwd()), 'bin/sysconfig.ini')
 
     with open(sysconfig_path, 'r') as outfile:
         sysconfig = json.loads(outfile.read())
 
+    # Configure processes
     proc_list = list()
-    for model in sysconfig:
+    for proc_config in sysconfig:
+        proc_config_dict = sysconfig.get(proc_config, {})
 
-        if model['model_class'] == 'diesel':
-            if model['interface_class'] == 'easygen3k':
-                proc = EasGen3k()
-                proc_list = config_process(model, proc, proc_list)
+        if proc_config_dict['interface_class'] == 'easygen3k':
+            proc_list.append(EasyGen3k.EasyGen3k({proc_config: proc_config_dict}))
+            print('Found EasyGen3k')
 
-            else:
-                raise ValueError('diesel model interface class is undefined')
-        #elif process['ModelClass'] == 'batteryinverter':
-        #    if process['InterfaceClass'] == 'GFIPM3k':
-        #        process_list.append(GFIPM3k(process))
-        #    else:
-        #        print(process, 'interface class is undefined.')
+        elif proc_config_dict['interface_class'] == 'sel547':
+            proc_list.append(SEL547.SEL547({proc_config: proc_config_dict}))
+            print('Found SEL547')
 
         else:
-            raise ValueError('model class is undefined')
+            raise ValueError('interface class is undefined')
 
+    # Start processes communication
+    for proc in proc_list:
+        proc.comm_client.start()
 
-
-'''
-    # Create MODBUS Client objects
-    clients = list()
-    for process_name in sysconfig:
-        clients.append(Modbus.Client(process_name, sysconfig_path))
-        print('PROCESS CREATED:', process_name)
-
-    time.sleep(1)
-
-    # Start MODBUS Clients
-    for client in clients:
-        client.start()
-        print('PROCESS STARTED:', client.process_name, '-- IP:', client.prop['ip_add'])
-
-    time.sleep(1)
-
-#    while True:
-    for client in clients:
-        print('-------------------------')
-        for keys, values in client.cvt.items():
-            print(client.process_name, round(values,2), keys)
-    time.sleep(5)
-
-    for client in clients:
-        client.process_stop = True
-        client.join()
-'''
+        for x in range(0, 3):
+            time.sleep(5)
+            print(proc.comm_client.process_name, proc.comm_client.cvt)
 
 print('Ending GridPi')
