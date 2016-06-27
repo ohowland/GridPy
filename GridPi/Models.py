@@ -6,6 +6,7 @@ class Asset(object):
 
         # Asset Configuration Dictionary:
         self.config = {'process_name': None,
+                       'comm_client': None,
                        'freq_rated': 0,
                        'volt_rated': 0,
                        'cap_kva_rated': 0,

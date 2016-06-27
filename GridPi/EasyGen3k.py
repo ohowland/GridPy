@@ -7,16 +7,19 @@ class EasyGen3k(Models.Diesel):
     def __init__(self, properties_dict):
         Models.Diesel.__init__(self)
 
-        self.process_name = list(properties_dict.keys())[0]
-        self.comm_client = None
+        # Set 'Process Name'.
+        self.config['process_name'] = list(properties_dict.keys())[0]
 
-        config = properties_dict[self.process_name]
+        # Pull configuration data for this process from the properties dictionary passes to the object.
+        config = properties_dict[self.config['process_name']]
 
+        # Map configuration file key, values to to model config dictionary keys
         for key, value in config['model_config'].items():
             if key in self.__dict__.keys():
                 self.__dict__[key] = value
 
-        self.comm_client = Comm.ModbusClient(self.process_name, config['interface_config'])
+        # Start communication client.
+        self.config['comm_client'] = Comm.ModbusClient(self.process_name, config['interface_config'])
 
     def __del__(self):
         self.comm_client.stop()
