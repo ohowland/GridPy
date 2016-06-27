@@ -24,13 +24,25 @@ class EasyGen3k(Models.Diesel):
 
     def update(self):
 
-        # Data from comm_client:
+        # Map data from comm_client to model:
+        # [freq, volt, kw, kvar]
+        for map in self.status.keys():
+            if map in self.comm_client.cvt.keys():
+                self.status[map] = self.comm_client.cvt[map]
+                print(map)
 
-        # Numerics
-        self.freq = self.comm_client.cvt['freq']
-        self.volt= self.comm_client.cvt['volt']
-        self.kw = self.comm_client.cvt['kw']
-        self.kvar = self.comm_client.cvt['kvar']
+        # Capacity Available
+        self.status['cap_kw_pos_avail'] = self.config['cap_kw_pos_rated']*int(self.enabled)
+        self.status['cap_kw_neg_avail'] = self.config['cap_kw_neg_rated']*int(self.enabled)
+        self.status['cap_kvar_pos_avail'] = self.config['cap_kvar_pos_rated']*int(self.enabled)
+        self.status['cap_kvar_neg_avail'] = self.config['cap_kvar_neg_rated']*int(self.enabled)
+
+
+        """ TBD
+        self.freq = self.comm_client.cvt.get('freq', 0)
+        self.volt= self.comm_client.cvt.get('volt', 0)
+        self.kw = self.comm_client.cvt.get('kw', 0)
+        self.kvar = self.comm_client.cvt.get('kvar', 0)
 
         # Booleans
         self.online = False
@@ -40,15 +52,14 @@ class EasyGen3k(Models.Diesel):
         self.grid_forming = False
 
         # Status Numeric Calcs
-        self.cap_kw_pos_avail = self.cap_kw_pos_rated*int(self.enabled)
-        self.cap_kw_neg_avail = self.cap_kw_neg_rated*int(self.enabled)
-        self.cap_kvar_pos_avail = self.cap_kvar_pos_rated*int(self.enabled)
-        self.cap_kvar_neg_avail = self.cap_kvar_neg_rated*int(self.enabled)
+
 
         #Status Boolean Calcs
         self.alarm = False
         self.warning = False
         self.caution = False
+
+        """
 
 
 if __name__ == '__main__':

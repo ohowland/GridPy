@@ -4,68 +4,91 @@ class Asset(object):
     """
     def __init__(self):
 
-        # Asset Properties:
-        self.process_name = None
-        self.freq_rated = int()
-        self.volt_rated = int()
-        self.cap_kva_rated = int()
-        self.cap_kw_pos_rated = int()
-        self.cap_kw_neg_rated = int()
-        self.cap_kvar_pos_rated = int()
-        self.cap_kvar_neg_rated = int()
+        # Asset Configuration Dictionary:
+        self.config = {'process_name': None,
+                       'freq_rated': 0,
+                       'volt_rated': 0,
+                       'cap_kva_rated': 0,
+                       'cap_kw_neg_rated': 0,
+                       'cap_kvar_pos_rated': 0,
+                       'cap_kvar_neg_rated': 0,
+                       'model_type': None
+                       }
 
-        # Asset Status:
-        self.freq = float()
-        self.volt = float()
-        self.cap_kw_pos_avail = float()
-        self.cap_kw_neg_avail = float()
-        self.cap_kvar_pos_avail = float()
-        self.cap_kvar_neg_avail = float()
-        self.alarm = False
-        self.warning = False
-        self.caution = False
-        self.online = False
-        self.on_system = False
+        # Asset Status Dictionary
+        self.status = {'freq': 0.0,
+                       'volt': 0.0,
+                       'cap_kw_pos_avail': 0.0,
+                       'cap_kw_neg_avail': 0.0,
+                       'cap_kvar_pos_avail': 0.0,
+                       'cap_kvar_neg_avail': 0.0,
+                       'alarm': False,
+                       'warning': False,
+                       'caution': False,
+                       'online': False,
+                       'on_system': False
+                       }
 
-        self.model_type = None
-
-        # Asset Control
+        # Asset Control Dictonary
+        self.ctrl = {}
 
 class CtrlAsset(Asset):
 
     def __init__(self):
         Asset.__init__(self)
 
-        # CtAsset Properties
+        # CtrlAsset Configuration
+        self.config.update()
 
-        # CtAsset Status
-        self.kw = float()
-        self.kvar = float()
-        self.enabled = False
-        self.remote_ctrl = False
+        # CtrlAsset Status
+        self.status.update(
+            {
+                'kw': 0.0,
+                'kvar': 0.0,
+                'enabled': False,
+                'remote_ctrl': False
+            }
+        )
 
-        # CtAsset Control
-        self.enable = False
-        self.run = False
-        self.clear_faults = False
+        # CtrlAsset Control
+
+        self.ctrl.update(
+            {
+                'enable': False,
+                'run': False,
+                'clear_faults': False
+            }
+        )
 
 class GFAsset(CtrlAsset):
 
     def __init__(self):
         CtrlAsset.__init__(self)
 
-        self.grid_forming = bool(0)
+        self.config.update({})
+
+        self.status.update(
+            {
+                'grid_forming_active': False
+            }
+        )
+
+        self.ctrl.update(
+            {
+                'grid_forming_enabled': False
+            }
+        )
 
 class Diesel(GFAsset):
 
     def __init__(self):
         GFAsset.__init__(self)
 
-        self.model_type = 'diesel'
+        self.config['model_type'] = 'diesel'
 
 class GridIntertie(GFAsset):
 
     def __init__(self):
         GFAsset.__init__(self)
 
-        self.model_type = 'gridintertie'
+        self.config['model_type'] = 'gridintertie'
