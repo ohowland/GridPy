@@ -10,6 +10,7 @@ class Asset(object):
                        'freq_rated': 0,
                        'volt_rated': 0,
                        'cap_kva_rated': 0,
+                       'cap_kw_pos_rated': 0,
                        'cap_kw_neg_rated': 0,
                        'cap_kvar_pos_rated': 0,
                        'cap_kvar_neg_rated': 0,
@@ -32,6 +33,20 @@ class Asset(object):
 
         # Asset Control Dictonary
         self.ctrl = {}
+
+    def init_model(self, config_dict):
+
+        for key, value in config_dict['model_config'].items():
+            if key in self.__dict__['config'].keys():
+                self.__dict__['config'][key] = value
+
+    def update(self): pass
+
+    def comm_client_update(self):
+
+        for key in self.status.keys():
+            if key in self.config['comm_client'].cvt.keys():
+                self.status[key] = self.config['comm_client'].cvt[key]
 
 class CtrlAsset(Asset):
 

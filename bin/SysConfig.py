@@ -8,19 +8,21 @@ import os
 
 # Build MODBUS client configuration from local configuration files
 sysconfig_name = 'sysconfig.ini'
-key = 'model_config'
+key = 'config_dict'
 sysconfig = dict()
 
 files = [f for f in os.listdir('.') if os.path.isfile(f) and f.endswith('.json')]
 
+i = 0
 for f in files:
     try:
         with open(f, 'r') as outfile:
             component_config = json.loads(outfile.read())
 
-        if key in component_config[list(component_config)[0]]:
-            sysconfig.update(component_config)
+        if key in component_config.keys():
+            sysconfig.update({'device_'+str(i): component_config[key]})
             print(f, 'added to system configuration')
+        i =++ 1
     except:
         print(f, 'not config file')
         

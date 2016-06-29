@@ -1,5 +1,5 @@
 {
-  "Grid Intertie_1": {
+  "config_dict": {
     "interface_config": {
       "ip_add": "192.168.253.154",
       "endian": ">",
@@ -33,6 +33,7 @@
       "update_rate": 1
     },
     "model_config": {
+      "process_name": "Grid Intertie",
       "cap_kva_rated": 20,
       "cap_kw_pos_rated": 20,
       "cap_kw_neg_rated": 0,

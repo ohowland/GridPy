@@ -30,34 +30,36 @@ if __name__ == '__main__':
     # Configure processes
     proc_list = list()
     for proc_config in sysconfig:
+        print('GRIDPI loading:', proc_config)
         proc_config_dict = sysconfig.get(proc_config, {})
 
         if proc_config_dict['interface_class'] == 'easygen3k':
-            proc_list.append(EasyGen3k.EasyGen3k({proc_config: proc_config_dict}))
-            print('Found EasyGen3k')
+            print('GRIDPI found: EasyGen3k')
+            proc_list.append(EasyGen3k.EasyGen3k(proc_config_dict))
 
         elif proc_config_dict['interface_class'] == 'sel547':
-            proc_list.append(SEL547.SEL547({proc_config: proc_config_dict}))
-            print('Found SEL547')
+            print('GRIDPI found: SEL547')
+            proc_list.append(SEL547.SEL547(proc_config_dict))
 
         else:
             raise ValueError('interface class is undefined')
 
-    # Start processes communication
-    for proc in proc_list:
-        proc.comm_client.start()
 
+    # Start processes communication
+    time.sleep(1)
+    for proc in proc_list:
+        proc.config['comm_client'].start()
 
     for proc in proc_list:
         for x in range(0, 3):
             time.sleep(2)
             proc.update()
-            print(proc.process_name,': \n',
-                proc.kw, 'kW \n',
-                proc.kvar, 'kVAR \n',
-                proc.freq, 'Hz \n',
-                proc.volt, 'V \n')
+            print(proc.config['process_name'],': \n',
+                proc.status['kw'], 'kW \n',
+                proc.status['kvar'], 'kVAR \n',
+                proc.status['freq'], 'Hz \n',
+                proc.status['volt'], 'V \n')
 
-        proc.comm_client.stop()
+        proc.config['comm_client'].stop()
 
 print('Ending GridPi')
