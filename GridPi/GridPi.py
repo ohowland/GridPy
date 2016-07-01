@@ -17,7 +17,7 @@
 import os
 import json
 import time
-import EasyGen3k, SEL547 # eventually put this in an interface.py or __init__.py?
+import EasyGen3k, SEL547  # eventually put this in an interface.py or __init__.py?
 
 if __name__ == '__main__':
 
@@ -54,7 +54,8 @@ if __name__ == '__main__':
         for x in range(0, 3):
             time.sleep(2)
             proc.update()
-            print(proc.config['process_name'],': \n',
+            print('\n'*20,
+                proc.config['process_name'],': \n',
                 proc.status['kw'], 'kW \n',
                 proc.status['kvar'], 'kVAR \n',
                 proc.status['freq'], 'Hz \n',

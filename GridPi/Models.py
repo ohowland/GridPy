@@ -7,15 +7,15 @@ class Asset(object):
         # Asset Configuration Dictionary:
         self.config = {'process_name': None,
                        'comm_client': None,
-                       'freq_rated': 0,
-                       'volt_rated': 0,
-                       'cap_kva_rated': 0,
-                       'cap_kw_pos_rated': 0,
-                       'cap_kw_neg_rated': 0,
-                       'cap_kvar_pos_rated': 0,
-                       'cap_kvar_neg_rated': 0,
-                       'model_type': None
-                       }
+                      'freq_rated': 0.0,
+                      'volt_rated': 0.0,
+                      'cap_kva_rated': 0.0,
+                      'cap_kw_pos_rated': 0.0,
+                      'cap_kw_neg_rated': 0.0,
+                      'cap_kvar_pos_rated': 0.0,
+                      'cap_kvar_neg_rated': 0.0,
+                      'model_type': None
+        }
 
         # Asset Status Dictionary
         self.status = {'freq': 0.0,
@@ -40,9 +40,7 @@ class Asset(object):
             if key in self.__dict__['config'].keys():
                 self.__dict__['config'][key] = value
 
-    def update(self): pass
-
-    def comm_client_update(self):
+    def update(self):
 
         for key in self.status.keys():
             if key in self.config['comm_client'].cvt.keys():
@@ -76,35 +74,32 @@ class CtrlAsset(Asset):
             }
         )
 
-class GFAsset(CtrlAsset):
+    def update(self):
+
+        super(CtrlAsset, self).update()
+
+        self.status['cap_kw_pos_avail'] = self.config['cap_kw_pos_rated']*int(self.status['enabled'])
+        self.status['cap_kw_neg_avail'] = self.config['cap_kw_neg_rated']*int(self.status['enabled'])
+        self.status['cap_kvar_pos_avail'] = self.config['cap_kvar_pos_rated']*int(self.status['enabled'])
+        self.status['cap_kvar_neg_avail'] = self.config['cap_kvar_neg_rated']*int(self.status['enabled'])
+
+class Diesel(CtrlAsset):
 
     def __init__(self):
         CtrlAsset.__init__(self)
 
-        self.config.update({})
-
-        self.status.update(
-            {
-                'grid_forming_active': False
-            }
-        )
-
-        self.ctrl.update(
-            {
-                'grid_forming_enabled': False
-            }
-        )
-
-class Diesel(GFAsset):
-
-    def __init__(self):
-        GFAsset.__init__(self)
-
         self.config['model_type'] = 'diesel'
 
-class GridIntertie(GFAsset):
+    def update(self):
+
+        super(Diesel, self).update()
+
+class GridIntertie(CtrlAsset):
 
     def __init__(self):
-        GFAsset.__init__(self)
+        CtrlAsset.__init__(self)
 
         self.config['model_type'] = 'gridintertie'
+
+    def update(self):
+        super(GridIntertie, self).update()

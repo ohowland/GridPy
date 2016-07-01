@@ -7,10 +7,10 @@ class EasyGen3k(Models.Diesel):
     def __init__(self, config_dict):
         Models.Diesel.__init__(self)
 
-        # Populate model from config_dict
+        # Configure model
         self.init_model(config_dict)
 
-        # Start communication client.
+        # Configure communication client.
         self.config['comm_client'] = Comm.ModbusClient(self.config['process_name'],
                                                        config_dict['interface_config'])
 
@@ -20,12 +20,8 @@ class EasyGen3k(Models.Diesel):
 
     def update(self):
 
-        self.comm_client_update()
+        super(EasyGen3k, self).update()
 
-        self.status['cap_kw_pos_avail'] = self.config['cap_kw_pos_rated']*int(self.status['enabled'])
-        self.status['cap_kw_neg_avail'] = self.config['cap_kw_neg_rated']*int(self.status['enabled'])
-        self.status['cap_kvar_pos_avail'] = self.config['cap_kvar_pos_rated']*int(self.status['enabled'])
-        self.status['cap_kvar_neg_avail'] = self.config['cap_kvar_neg_rated']*int(self.status['enabled'])
 
 if __name__ == '__main__':
 
