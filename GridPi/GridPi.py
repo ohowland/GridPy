@@ -19,7 +19,10 @@ import json
 import time
 import EasyGen3k, SEL547  # eventually put this in an interface.py or __init__.py?
 
-if __name__ == '__main__':
+# Read system configuration
+
+
+"""if __name__ == '__main__':
 
     # Read system configuration
     sysconfig_path = os.path.join(os.path.dirname(os.getcwd()), 'bin/sysconfig.ini')
@@ -64,3 +67,4 @@ if __name__ == '__main__':
         proc.config['comm_client'].stop()
 
 print('Ending GridPi')
+"""
