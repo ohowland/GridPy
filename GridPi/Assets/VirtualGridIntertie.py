@@ -1,4 +1,4 @@
-from GridPi.Models import GridIntertie
+from Models import GridIntertie
 
 class VirtualGridIntertie(GridIntertie):
 

@@ -31,7 +31,6 @@ class Asset(object):
         self.on_system = False
 
     def init_model(self, config_dict):
-
         for key, value in config_dict['model_config'].items():
             if key in self.__dict__.keys():
                 self.__dict__[key] = value

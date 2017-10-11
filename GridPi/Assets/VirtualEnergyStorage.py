@@ -1,4 +1,4 @@
-from GridPi.Models import EnergyStorage
+from Models import EnergyStorage
 
 class VirtualEnergyStorage(EnergyStorage):
 

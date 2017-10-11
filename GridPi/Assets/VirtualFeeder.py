@@ -1,4 +1,4 @@
-from GridPi.Models import Feeder
+from Models import Feeder
 
 class VirtualFeeder(Feeder):
 
