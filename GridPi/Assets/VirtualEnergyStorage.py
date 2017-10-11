@@ -1,4 +1,5 @@
 from Models import EnergyStorage
+import logging
 
 class VirtualEnergyStorage(EnergyStorage):
 
@@ -6,9 +7,10 @@ class VirtualEnergyStorage(EnergyStorage):
         EnergyStorage.__init__(self)
 
         self.init_model(config_dict)
+        logging.debug('ASSET INTERFACE: %s constructed', self.config_process_name)
 
     def __del__(self):
-        print('PROCESS INTERFACE:', self.process_name, '-- deconstructed')
+        logging.debug('ASSET INTERFACE: %s deconstructed', self.config_process_name)
 
     def update(self):
 
