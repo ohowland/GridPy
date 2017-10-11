@@ -1,19 +1,28 @@
 from nose.tools import *
+import unittest
 
-from Core.Core import System
-from Core.Models import Asset
+from GridPi.Core import System
+from GridPi.Models import Asset
 
-def setup(): # Runs before every test method.
-    print('Setup.')
+def setup_func():
+    "set up test fixtures"
+    pass
 
+def teardown_func():
+    "tear down test fixtures"
+    pass
 
-def teardown(): # Runs after every test method.
-	print('Cleanup.')
+@with_setup(setup_func, teardown_func)
+def test_add_asset():
+    system = System()
+    asset = Asset()
+    system.add_asset(asset)
+    assert True
 
-@with_setup(setup, teardown)
-def testconfig1():
-    test_system = System()
-    asset1 = Asset()
-    test_system.add_asset(asset1)
-    print('Test 1 Ran.')
+@with_setup(setup_func, teardown_func)
+def test_remove_asset():
+    system = System()
+    asset = Asset()
+    system.add_asset(asset)
+    assert True
 
