@@ -1,4 +1,9 @@
-import time
+class ProcessModule(object):
+  def __init__(self):
+    self.input = dict()
+    self.output = dict()
+    self.config = dict()
+    self.config_module_name = 'empty'
 
 class Edgenode(object):
   def __init__(self):
