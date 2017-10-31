@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """Modbus.py is an extension of pymodbus3 and the threading module.
     This module contains a modbus Client and Server class.
 

@@ -1,11 +1,10 @@
-"""GridPi acts as the software entry point.
+#!/usr/bin/env python3
 
-"""
 from Core import TagBus, System
-import Models
+from Assets import Models
 import HMI
-import time
 
+import time
 import logging
 
 # Read system configuration
@@ -16,32 +15,32 @@ if __name__ == '__main__':
     """
     feeder_config = {
         'model_config': {
-            "config_class_name": 'VirtualFeeder',
-            "config_process_name": 'Feeder1',
-            "config_cap_kw_pos_rated": 20,
-            "config_cap_kw_neg_rated": 20,
-            "config_cap_kvar_pos_rated": 20,
-            "config_cap_kvar_neg_rated": 20,
+            "class_name": 'VirtualFeeder',
+            "name": 'Feeder1',
+            "cap_kw_pos_rated": 20,
+            "cap_kw_neg_rated": 20,
+            "cap_kvar_pos_rated": 20,
+            "cap_kvar_neg_rated": 20,
         }
     }
     gridintertie_config = {
         'model_config': {
-            "config_class_name": 'VirtualGridIntertie',
-            "config_process_name": 'GridIntertie1',
-            "config_cap_kw_pos_rated": 30,
-            "config_cap_kw_neg_rated": 30,
-            "config_cap_kvar_pos_rated": 15,
-            "config_cap_kvar_neg_rated": 15,
+            "class_name": 'VirtualGridIntertie',
+            "name": 'GridIntertie1',
+            "cap_kw_pos_rated": 30,
+            "cap_kw_neg_rated": 30,
+            "cap_kvar_pos_rated": 15,
+            "cap_kvar_neg_rated": 15,
         }
     }
     energystorage_config = {
         'model_config': {
-            "config_class_name": 'VirtualEnergyStorage',
-            "config_process_name": 'EnergyStorage1',
-            "config_cap_kw_pos_rated": 20,
-            "config_cap_kw_neg_rated": 20,
-            "config_cap_kvar_pos_rated": 15,
-            "config_cap_kvar_neg_rated": 15,
+            "class_name": 'VirtualEnergyStorage',
+            "name": 'EnergyStorage1',
+            "cap_kw_pos_rated": 20,
+            "cap_kw_neg_rated": 20,
+            "cap_kvar_pos_rated": 15,
+            "cap_kvar_neg_rated": 15,
         }
     }
 
@@ -58,8 +57,8 @@ if __name__ == '__main__':
     tagbus object.
     
     """
-    gp = System()                    # Create System container object
-    asset_factory = Models.AssetFactory() # Create Asset Factory object
+    gp = System()                         # Create System container object
+    asset_factory = Models.AssetFactory('Assets') # Create Asset Factory object
 
     for cfg in asset_cfgs:                        # Add Assets to System, The asset factory acts on a configuration
         gp.add_asset(asset_factory.factory(cfg))  # dictionary file. using config_class_name to import the correct
@@ -73,6 +72,7 @@ if __name__ == '__main__':
     """ Initalize HMI object
     
     """
+
     hmi = HMI.Application(gp) # Create HMI object
 
     """ System dispatch process loop
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     """
     while(True):
         gp.update_tagbus_from_assets()
-        gp.process_modules()
+#        gp.process_modules()
         gp.write_assets_from_tagbus()
-        time.sleep(.2)
+        time.sleep(.05)
         try:
             hmi.update_idletasks()
             hmi.update()

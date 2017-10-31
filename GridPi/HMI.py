@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import tkinter as tk
 import tkinter.ttk as ttk
 
@@ -27,11 +29,24 @@ class Application(tk.Frame):
             self.tree.insert(asset_name, 1, asset_name + '_ctrl', text='control')
             self.tree.insert(asset_name, 1, asset_name + '_config', text='configuration')
 
-        for tag in system.tagbus.tags.keys():
+            for tag in system.assets[asset_name].status.keys():
+                tag_category = asset_name + '_status'
+                self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
+
+            for tag in system.assets[asset_name].ctrl.keys():
+                tag_category = asset_name + '_ctrl'
+                self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
+
+            for tag in system.assets[asset_name].config.keys():
+                tag_category = asset_name + '_config'
+                self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
+
+        """ for tag in system.tagbus.tags.keys():
             name_components = tag.split('_')
-            tag_category = '_'.join(name_components[0:2])
-            tag_name = '_'.join(name_components[2:])
+            tag_category = '_'.join(name_components[0:1])
+            tag_name = '_'.join(name_components[1:])
             self.tree.insert(tag_category, 0, tag, text=tag_name, value=["0"])
+        """
 
         self.tree.pack(side="top")
 
