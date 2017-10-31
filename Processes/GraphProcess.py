@@ -15,9 +15,7 @@ class Graph(object):
         self.nedges = 0
         self.directed = True
 
-    def read_graph(self, path):
-        with open(path, 'r') as f:
-            graph_data = f.read()
+    def process_edge_pairs(self, graph_data):
 
         # Find the number of edges, by halving the input data
         graph_data_split = graph_data.split()
@@ -65,6 +63,11 @@ class Graph(object):
                 node = node.next
             print()
 
+class GraphSystem(Graph):
+    def __init__(self, system):
+        super(GraphSystem, self).__init__()
+
+        GraphDependencies().find_dependencies(system)
 
 class DFS(object):
     def __init__(self, graph):
@@ -122,10 +125,34 @@ class DFS(object):
     def process_vertex_late(self, node):
         self.topo_list.append(node)
 
+class GraphDependencies(object):
+    def __init__(self):
+
+        self.dependent = dict()
+        self.independent = dict()
+
+
+    def find_dependencies(self, system):
+        for process in system.process.values():
+            #print('process:', process.name)
+            for input in process.input.keys():
+                #print('-->key:', input)
+                try:
+                    self.dependent[input].append(process.name)
+                except KeyError:
+                    self.dependent[input] = process.name
+
+        print('self.dependent (map to linked list):',self.dependent)
+
+    def link_independent(self, system):
+        for process in system.process.values():
+            for output in process.output.keys():
+
+                #refer to notes, this is where we implement aggregation modules
+
+    def edge_list(self):
+
+
 
 if __name__ == '__main__':
-    g = Graph()
-    g.read_graph('test.txt')
-    g.print_adjlist()
-
-    s = DFS(g)
+    pass

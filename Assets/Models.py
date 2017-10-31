@@ -82,8 +82,7 @@ class CtrlAsset(Asset):
         # CtrlAsset Control
         self.ctrl.update({'enable' : False,
                           'run' : False,
-                          'clear_faults' : False,
-                          'kw_setpoint': 0.0})
+                          'clear_faults' : False})
 
     def update(self):
 
@@ -112,6 +111,8 @@ class EnergyStorage(CtrlAsset):
     """
     def __init__(self):
         super(EnergyStorage, self).__init__()
+        self.status.update({'soc': 0,
+                            'kw_setpoint': 0.0})
 
     def update(self):
         super(EnergyStorage, self).update()

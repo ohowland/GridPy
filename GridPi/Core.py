@@ -89,7 +89,7 @@ class System(object):
 
     def add_process(self, process):
         new_process = dict()
-        new_process[process.config['name']] = process
+        new_process[process.name] = process
         self._process.update(new_process)
 
     def add_tagbus(self, tagbus):
