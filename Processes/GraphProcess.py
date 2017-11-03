@@ -1,13 +1,23 @@
 #!/usr/bin/env python3
 
+""" This module defines all operations that take place on system.process objects.
+
+"""
+
+import logging
+from Processes import Process
+
+
 class Edgenode(object):
     def __init__(self):
         self.name = None
-        self.weight = None
         self.next = None
 
 
 class Graph(object):
+    """ Defines a Graph Object
+
+    """
     def __init__(self):
         self.edges = dict()
         self.degree = dict()
@@ -15,35 +25,33 @@ class Graph(object):
         self.nedges = 0
         self.directed = True
 
-    def process_edge_pairs(self, graph_data):
+        self.edge_data_input = None
 
-        # Find the number of edges, by halving the input data
-        graph_data_split = graph_data.split()
-        self.nedges = len(graph_data_split) / 2
+    def build_adj_list(self):
+        logging.debug('GRAPH PROCESS: input graph edges: %s', self.edge_data_input)
 
-        # Find the number of verticies by hashing a set
+        self.nedges = len(self.edge_data_input)  # Find the number of edges, by halving the input data
+
         vertex_set = dict()
-        for x in graph_data_split:
-            vertex_set[x] = 1
+        for edge in self.edge_data_input:  # Find the number of verticies by hashing a set
+            vertex_set[edge[0]] = 1
+            vertex_set[edge[1]] = 1
         self.nverticies = len(vertex_set)
 
-        for i in range(0, len(graph_data_split), 2):
-            chunk = graph_data_split[i:i + 2]
-            self.insert_edge(chunk[0], chunk[1], True)
+        for edge in self.edge_data_input:  # Insert Edge
+            self.insert_edge(edge[0], edge[1], True)
 
     def insert_edge(self, start_node, end_node, directed):
 
         edge = Edgenode()
-        edge.name = end_node
-        edge.next = self.edges.get(start_node, None)
+        edge.name = end_node.name
+        edge.next = self.edges.get(start_node.name, None)
 
-        self.edges[start_node] = edge
-        self.degree[start_node] = 1
+        self.edges[start_node.name] = edge
+        self.degree[start_node.name] = 1
 
         # Test to see if destination node has been added to the adjacency list
-        try:
-            x = self.edges[edge.name]
-        except KeyError:
+        if not self.edges.get(edge.name, None):
             self.edges[edge.name] = None
 
         if not directed:
@@ -51,7 +59,9 @@ class Graph(object):
         else:
             self.nedges += 1
 
-            # print('inserted ({},{})'.format(x, y))
+    def topological_sort(self):
+        dfs = DFS(self)
+        return dfs.topological_sort
 
     def print_adjlist(self):
         for start_node, edge in self.edges.items():
@@ -63,13 +73,30 @@ class Graph(object):
                 node = node.next
             print()
 
-class GraphSystem(Graph):
-    def __init__(self, system):
-        super(GraphSystem, self).__init__()
 
-        GraphDependencies().find_dependencies(system)
+class GraphProcess(Graph):
+    """ Interfaces a standard graph object with a system object
+
+    """
+    def __init__(self, process):
+        super(GraphProcess, self).__init__()
+
+        self.GD = GraphDependencies()
+        self.GD.find_input_sinks(process.process_list)
+        self.GD.find_output_sources(process.process_list)
+        self.GD.resolve_duplicate_sources(process.process_dict)
+
+        self.edge_data_input = self.GD.edge_list()
+
 
 class DFS(object):
+    """ Performs depth-first search on a Graph object
+
+    """
+    @property
+    def topological_sort(self):
+        return self._topological_sort
+
     def __init__(self, graph):
 
         self.processed = dict()
@@ -84,14 +111,14 @@ class DFS(object):
         self.time = 0
 
         self.finished = 0
-        self.topo_list = list()
+        self._topological_sort = list()
 
         for node in graph.edges.keys():
             if not self.processed[node]:
                 self.dfs(graph, node)
 
-        self.topo_list.reverse()
-        print(self.topo_list)
+        self._topological_sort.reverse()
+        logging.debug('GRAPH PROCESS.DFS: Topological Sort %s', self._topological_sort)
 
     def dfs(self, graph, start_node):
 
@@ -123,35 +150,85 @@ class DFS(object):
         # print('{} processed'.format(start_node))
 
     def process_vertex_late(self, node):
-        self.topo_list.append(node)
+        self._topological_sort.append(node)
+
 
 class GraphDependencies(object):
+    """ Finds dependencies and creates an dependency edge list. edge lists are comma separated nodes, pairs of which
+     define and edge. This is input to Graph object.
+
+    """
     def __init__(self):
 
-        self.dependent = dict()
-        self.independent = dict()
+        self.sink = dict()          # Dict('input' : list(process1, process2...))
+        self.source = dict()
+        self.aggregate = dict()
 
+    def find_input_sinks(self, process_list):
+        """ For an input in any process, log that process as a 'dependent' of that input in the dependent dictionary
 
-    def find_dependencies(self, system):
-        for process in system.process.values():
-            #print('process:', process.name)
-            for input in process.input.keys():
-                #print('-->key:', input)
+        """
+
+        for process in process_list:
+            for inpt in process.input.keys():
                 try:
-                    self.dependent[input].append(process.name)
+                    self.sink[inpt].append(process)
                 except KeyError:
-                    self.dependent[input] = process.name
+                    self.sink[inpt] = [process]
 
-        print('self.dependent (map to linked list):',self.dependent)
+        logging.debug('GRAPH PROCESS: pre-process self.sink: %s', self.sink)
 
-    def link_independent(self, system):
-        for process in system.process.values():
+    def find_output_sources(self, process_list):
+        """ For an output in any process, log that process as an 'indenpendent source' of that output in the
+        indenpendent dictonary.
+        """
+        for process in process_list:
             for output in process.output.keys():
+                try:
+                    self.source[output].append(process)
+                except KeyError:
+                    self.source[output] = [process]
 
-                #refer to notes, this is where we implement aggregation modules
+        logging.debug('GRAPH PROCESS: pre-process self.source: %s', self.source)
+
+    def resolve_duplicate_sources(self, process_dict):
+        for process_list in self.source.values():
+            if len(process_list) > 1:
+
+                """ An aggregate object is created whihc holds the processes that combine the same output
+                The output of the aggregate object is the output of the processes it contains"""
+                agg_process = Process.AggregateProcessSummation(process_list)
+                process_dict.update({agg_process.name: agg_process})  # Update the process dictionary with agg process
+
+                for process in process_list:
+                    self.aggregate[process] = [agg_process]  # Log what processes are being replaced by the Agg Process
+
+        for output, process_list in self.source.items():  # Replace processes now contained in the Aggregate Process
+            for process in process_list:                  # in the source dict with the Aggregate Process
+                if self.aggregate.get(process, None):
+                    self.source[output] = self.aggregate[process]
+
+        logging.debug('GRAPH PROCESS: post-process self.source: %s', self.source)
+
+        for inpt, process_list in self.sink.items():  # Replace processes now contained in the Aggregate Process
+            for process in process_list:                  # in the sink dict with the Aggregate Process
+                if self.aggregate.get(process, None):
+                    self.sink[inpt] = self.aggregate[process]
+
+        logging.debug('GRAPH PROCESS: post-process self.sink: %s', self.sink)
 
     def edge_list(self):
 
+        edges = []
+
+        for inpt, sink_process_list in self.sink.items():
+            for output, source_process_list in self.source.items():
+                if inpt == output:
+                    for sink_process in sink_process_list:
+                        for source_process in source_process_list:
+                            edge = [source_process, sink_process]
+                            edges.append(edge)
+        return edges
 
 
 if __name__ == '__main__':

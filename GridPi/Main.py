@@ -16,7 +16,7 @@ if __name__ == '__main__':
     feeder_config = {
         'model_config': {
             "class_name": 'VirtualFeeder',
-            "name": 'Feeder1',
+            "name": 'feeer',
             "cap_kw_pos_rated": 20,
             "cap_kw_neg_rated": 20,
             "cap_kvar_pos_rated": 20,
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     gridintertie_config = {
         'model_config': {
             "class_name": 'VirtualGridIntertie',
-            "name": 'GridIntertie1',
+            "name": 'grid',
             "cap_kw_pos_rated": 30,
             "cap_kw_neg_rated": 30,
             "cap_kvar_pos_rated": 15,
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     energystorage_config = {
         'model_config': {
             "class_name": 'VirtualEnergyStorage',
-            "name": 'EnergyStorage1',
+            "name": 'inverter',
             "cap_kw_pos_rated": 20,
             "cap_kw_neg_rated": 20,
             "cap_kvar_pos_rated": 15,
@@ -73,18 +73,23 @@ if __name__ == '__main__':
     
     """
 
-    hmi = HMI.Application(gp) # Create HMI object
+#    hmi = HMI.Application(gp) # Create HMI object
 
     """ System dispatch process loop
     
     """
-    while(True):
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG) # configure logging
+    run = True
+    while(run):
         gp.update_tagbus_from_assets()
-#        gp.process_modules()
+        gp.update_tagbus_from_process()
         gp.write_assets_from_tagbus()
-        time.sleep(.05)
-        try:
-            hmi.update_idletasks()
-            hmi.update()
-        except:
-            break
+
+        gp.tagbus.dump()
+        run = False
+#        time.sleep(1)
+#        try:
+#            hmi.update_idletasks()
+#            hmi.update()
+#        except:
+#            break

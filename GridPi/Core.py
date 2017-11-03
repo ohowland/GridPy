@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import logging
+from Processes import Process
+
 
 class Tag(object):
 
@@ -36,19 +38,19 @@ class TagBus(object):
         return self._tags
 
     def add(self, tag_name, default_value=None, units=None):
-        if (self._tags.get(tag_name, False)):  # Statement executes if tag is found
+        if self._tags.get(tag_name, False):  # Statement executes if tag is found
             logging.warning('tagbus.add_tag(): %s attempting to overwrite existing tag')
         else:                                  # Statement executes if tag is not found
             self._tags[tag_name] = Tag(tag_name, value=default_value, units=units)
-            #logging.info('tagbus.add_tag(): %s tag added to tagbus', tag_name)
+#           logging.info('tagbus.add_tag(): %s tag added to tagbus', tag_name)
 
     def read(self, tag_name):
         return self._tags[tag_name].value
 
     def write(self, tag_name, value):
-        if (self._tags.get(tag_name, False)): # Statement executes if tag is found
+        if self._tags.get(tag_name, False):  # Statement executes if tag is found
             self._tags[tag_name].value = value
-            #logging.info('tagbus.write_tag(): writing %s', tag_name)
+#           logging.info('tagbus.write_tag(): writing %s', tag_name)
         else:                                 # Statement executes if tag is not found
             logging.warning("tagbus.write_tag(): %s tag does not exist", tag_name)
 
@@ -67,7 +69,7 @@ class System(object):
 
     def __init__(self):
         self._assets = dict()
-        self._process = dict()
+        self._process = Process.ProcessContainer()
         self._tagbus = TagBus()
 
     @property
@@ -82,15 +84,19 @@ class System(object):
     def process(self):
         return self._process
 
+    def write(self, key, val):
+        self._tagbus.write(key, val)
+
+    def read(self, key):
+        return self._tagbus.read(key)
+
     def add_asset(self, asset):
         new_asset = dict()
         new_asset[asset.config['name']] = asset
         self._assets.update(new_asset)
 
-    def add_process(self, process):
-        new_process = dict()
-        new_process[process.name] = process
-        self._process.update(new_process)
+    def add_process(self, new_process):
+        self._process.add_process(new_process)
 
     def add_tagbus(self, tagbus):
         self._tagbus = tagbus
@@ -112,6 +118,10 @@ class System(object):
 
             for key in asset.ctrl.keys():
                 tag_name = '_'.join([asset.config['name'], key])
+                self.tagbus.add(tag_name, default_value=None, units=None)
+
+        for process in self.process.process_list:
+            for tag_name in process.output.keys():
                 self.tagbus.add(tag_name, default_value=None, units=None)
 
     def update_tagbus_from_assets(self):
@@ -149,8 +159,9 @@ class System(object):
             tag = '_'.join([asset.config['name'], key])
             asset.ctrl[key] = self.tagbus.read(tag)
 
-    def write(self, key, val):
-        self._tagbus.write(key, val)
+    def update_tagbus_from_process(self):
 
-    def read(self, key):
-        return self._tagbus.read(key)
+        for process in self.process.process_list:
+            process.run(self)
+
+

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import unittest
+import logging
 
 from Assets import Models
 from GridPi import Core
@@ -12,6 +13,7 @@ class TestProcessModule(unittest.TestCase):
 
     def setUp(self):
         "Setup for Process Module Testing"
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
         """ Assets 
         """
@@ -127,10 +129,10 @@ class TestProcessModule(unittest.TestCase):
         inv_soc_pwr_ctrl = Process.INV_SOC_PWR_CTRL(inv_soc_pwr_ctrl_config)
         inv_dmdlmt_pwr_ctrl = Process.INV_DMDLMT_PWR_CTRL(inv_dmdlmt_pwr_ctrl_config)
 
-        inv_pwr_ctrl_agg = Process.AggregateProcessSummation()
-        inv_pwr_ctrl_agg.process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
+        process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
+        inv_pwr_ctrl_agg = Process.AggregateProcessSummation(process_list)
 
-        inv_pwr_ctrl_agg.run_process(self.test_system.tagbus)
+        inv_pwr_ctrl_agg.run(self.test_system.tagbus)
 
         final = self.test_system.read(tag)
 
@@ -139,13 +141,14 @@ class TestProcessModule(unittest.TestCase):
 
     def test_graph_dependencies(self):
 
-        g = GraphProcess.GraphSystem(self.test_system)
+        self.test_system.process.sort(self.test_system)
 
-        #g.process_edge_pairs(edge_pairs)
-        #g.print_adjlist()
+    def test_process(self):
 
-        #s = GraphProcess.DFS(g)
-
+        self.test_system.update_tagbus_from_assets()
+        self.test_system.update_tagbus_from_process()
+        self.test_system.write_assets_from_tagbus()
+        self.test_system.tagbus.dump()
 
 if __name__ == '__main__':
     unittest.main()
