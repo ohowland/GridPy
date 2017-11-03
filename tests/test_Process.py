@@ -104,7 +104,20 @@ class TestProcessModule(unittest.TestCase):
         self.test_system.register_tags()  # System will register all Asset object parameters with key 'status_*' as a
                                           # tag in system.Tagbus object.
 
-        self.test_system.write('inverter_soc', 0.6)
+    def test_process_factory(self):
+
+        test_class_cfg = inv_soc_pwr_ctrl_config = {
+            'model_config': {
+                "class_name": 'INV_SOC_PWR_CTRL',
+                "inverter_target_soc": 0.6
+            }
+        }
+
+        PF = Process.ProcessFactory('Processes')
+        test_class = PF.factory(test_class_cfg)
+
+        self.assertIsInstance(test_class, Process.INV_SOC_PWR_CTRL)
+        self.assertEqual(test_class.config['inverter_target_soc'], 0.6)
 
     def test_tag_aggregation(self):
         ''' Test the tag aggregation class.
@@ -132,7 +145,7 @@ class TestProcessModule(unittest.TestCase):
         process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
         inv_pwr_ctrl_agg = Process.AggregateProcessSummation(process_list)
 
-        inv_pwr_ctrl_agg.run(self.test_system.tagbus)
+        inv_pwr_ctrl_agg.run(self.test_system)
 
         final = self.test_system.read(tag)
 
@@ -148,7 +161,9 @@ class TestProcessModule(unittest.TestCase):
         self.test_system.update_tagbus_from_assets()
         self.test_system.update_tagbus_from_process()
         self.test_system.write_assets_from_tagbus()
-        self.test_system.tagbus.dump()
+
+        self.assertGreater(self.test_system.read('inverter_soc'), 0.0)
+
 
 if __name__ == '__main__':
     unittest.main()

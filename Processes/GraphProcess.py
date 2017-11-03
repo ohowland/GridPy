@@ -118,7 +118,7 @@ class DFS(object):
                 self.dfs(graph, node)
 
         self._topological_sort.reverse()
-        logging.debug('GRAPH PROCESS.DFS: Topological Sort %s', self._topological_sort)
+        logging.debug('GRAPH PROCESS: dfs(): Topological Sort %s', self._topological_sort)
 
     def dfs(self, graph, start_node):
 
@@ -168,7 +168,6 @@ class GraphDependencies(object):
         """ For an input in any process, log that process as a 'dependent' of that input in the dependent dictionary
 
         """
-
         for process in process_list:
             for inpt in process.input.keys():
                 try:

@@ -39,20 +39,23 @@ class TagBus(object):
 
     def add(self, tag_name, default_value=None, units=None):
         if self._tags.get(tag_name, False):  # Statement executes if tag is found
-            logging.warning('tagbus.add_tag(): %s attempting to overwrite existing tag')
+            logging.warning('CORE: tagbus.add_tag(): Attempt to overwrite existing tag: "%s"', tag_name)
         else:                                  # Statement executes if tag is not found
             self._tags[tag_name] = Tag(tag_name, value=default_value, units=units)
 #           logging.info('tagbus.add_tag(): %s tag added to tagbus', tag_name)
 
     def read(self, tag_name):
-        return self._tags[tag_name].value
+        try:
+            return self._tags[tag_name].value
+        except KeyError:
+            logging.warning("Core: tagbus.read_tag(): %s tag does not exist", tag_name)
 
     def write(self, tag_name, value):
         if self._tags.get(tag_name, False):  # Statement executes if tag is found
             self._tags[tag_name].value = value
 #           logging.info('tagbus.write_tag(): writing %s', tag_name)
         else:                                 # Statement executes if tag is not found
-            logging.warning("tagbus.write_tag(): %s tag does not exist", tag_name)
+            logging.warning("CORE: tagbus.write_tag(): %s tag does not exist", tag_name)
 
     def dump(self):
         for key, val in self.tags.items():
@@ -87,8 +90,17 @@ class System(object):
     def write(self, key, val):
         self._tagbus.write(key, val)
 
+    def write_multi(self, tag_dict):
+        for key, val in tag_dict.items():
+            self.write(key, val)
+
     def read(self, key):
         return self._tagbus.read(key)
+
+    def read_multi(self, tag_dict):
+        for key in tag_dict.keys():
+            tag_dict[key] = self.read(key)
+        return tag_dict
 
     def add_asset(self, asset):
         new_asset = dict()
@@ -161,7 +173,9 @@ class System(object):
 
     def update_tagbus_from_process(self):
 
+        logging.debug('CORE: update_tagbus_from_process(): %s', self.process.process_list)
         for process in self.process.process_list:
+
             process.run(self)
 
 

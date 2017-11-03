@@ -19,7 +19,7 @@ class ModbusClient(threading.Thread):
 
     """
 
-    def __init__(self, process_name, interface_config):
+    def __init__(self, asset_read_dict, asset_write_dict, interface_config):
         """ interface config
         ('ip_add', '0.0.0.0')
         ('endian', '>')
@@ -34,7 +34,6 @@ class ModbusClient(threading.Thread):
         threading.Thread.__init__(self)
 
         self.config = interface_config
-        self.process_name = process_name
 
         self.daemon = True  # TODO: this may be threading in 2.7, daemon is method now?
 
