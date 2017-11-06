@@ -6,7 +6,6 @@ import logging
 from Assets import Models
 from GridPi import Core
 from Processes import Process
-from Processes import GraphProcess
 
 
 class TestProcessModule(unittest.TestCase):

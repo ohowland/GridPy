@@ -72,7 +72,7 @@ class Asset(object):
         """
         return
 
-    async def updateControl(self):
+    async def updateCtrl(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
@@ -140,6 +140,8 @@ class EnergyStorage(CtrlAsset):
         super(EnergyStorage, self).__init__()
         self.status.update({
             'soc': 0,
+        })
+        self.ctrl.update({
             'kw_setpoint': 0.0
         })
 
