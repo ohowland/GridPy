@@ -1,4 +1,5 @@
 import logging
+import time
 from Assets import StateMachine
 
 from Assets.Models import EnergyStorage
@@ -19,7 +20,7 @@ class VirtualEnergyStorage(EnergyStorage):
             'run_cmd': False
         })
 
-        self.comm_interface = VESDevice(self.internal_status, self.internal_ctrl)  # Configure the communications interface (virtual component)
+        self.comm_interface = VESDevice()  # Configure the communications interface (virtual component)
         self.initModel(config_dict)  # Write parameters in this model that match keys in the dictionary
 
         logging.debug('ASSET INTERFACE: %s constructed', self.config['name'])
@@ -56,73 +57,135 @@ class VirtualEnergyStorage(EnergyStorage):
 
 
 class VESDevice(StateMachine.StateMachine):
-    def __init__(self, internal_status, internal_ctrl):
+    def __init__(self):
 
-        self.state_machine_input = Input(internal_ctrl)          # State machine input message object
-        self.state_machine_output = Output(internal_status)      # State machine output message object
-        StateMachine.StateMachine.__init__(self, state_offline,  # Initialize State Machine
-                                           self.state_machine_input,
-                                           self.state_machine_output)
+        # Keep the persistent information about the device here.
+        self.kw = 0
+        self.soc = 0.5
+        self.kwh_capacity_rated = 30.0
+        self.online = False
+        self.run_cmd = False
+        self.initialized = False
+        self.kw_setpoint = 0
+        self.looptime = time.time()
+
+        StateMachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
+                                           Input(self.__dict__))
 
     def read(self, internal_status):
         """ Read state_machine_output class dict keys into internal_status
         """
         self.deviceUpdate()
+        self.looptime = time.time()
+
         for key in internal_status.keys():
-            internal_status[key] = self.state_machine_output.__dict__[key]
+            internal_status[key] = self.__dict__[key]
 
     def write(self, internal_ctrl):
         """ Write internal_ctrl values to state_machine_input class dict keys
         """
-        self.deviceUpdate()
         for key, val in internal_ctrl.items():
-            self.state_machine_input.__dict__[key] = val
+            self.__dict__[key] = val
+
+        self.deviceUpdate()
+        self.looptime = time.time()
 
     def deviceUpdate(self):
-        self.state_machine_output = self.run(self.state_machine_input, self.state_machine_output)
+        """ Run state machine, this would ideally go into a parallel loop.
+
+        """
+        sm_output = self.state_machine_output = self.run(Input(self.__dict__))
+
+        for key, val in sm_output.__dict__.items():
+            setattr(self, key, val)
+
+class Initialize(StateMachine.State):
+    """ Startup state for the VES
+    """
+    def run(self, sm_input):
+        logging.debug('VirtualEnergyStorage.StateMachine(): STATE: Initialize')
+        sm_output = Output(dict())
+
+        setattr(sm_output, 'initialized', True)
+        return sm_output
+
+    def next(self, sm_input):
+
+        if getattr(sm_input, 'initialized') == True:
+            return state_offline
+        return state_initialize
 
 
 class Offline(StateMachine.State):
-    def run(self, smInput, smOutput):
+    """ Offline state for the VES
+    """
+    def run(self, sm_input):
         logging.debug('VirtualEnergyStorage.StateMachine(): STATE: Offline')
+        sm_output = Output(dict())  # create output msg object
 
-        setattr(smOutput, 'online', False)
-        logging.debug('VirtualEnergyStorage.StateMachine.State output: %s', smOutput.__dict__)
-        return smOutput
+        """ Calculate Online Status: """
+        setattr(sm_output, 'online', False)
 
-    def next(self, smInput):
-        if getattr(smInput, 'run_cmd') == True:
+        """ Calculate SOC """
+        soc = getattr(sm_input, 'soc')
+        setattr(sm_output, 'soc', soc)
+
+        """ Calculate kW output """
+        setattr(sm_output, 'kw', 0.0)
+
+        logging.debug('VirtualEnergyStorage.StateMachine.State output: %s', sm_output.__dict__)
+        return sm_output
+
+    def next(self, sm_input):
+        if getattr(sm_input, 'run_cmd') == True:
             return state_online
         return state_offline
 
 
 class Online(StateMachine.State):
-    def run(self, smInput, smOutput):
+    """ Online state for the VES
+    """
+    def run(self, sm_input):
         logging.debug('VirtualEnergyStorage.StateMachine(): STATE: Online')
+        sm_output = Output(dict())  # create output msg object
 
-        setattr(smOutput, 'online', True)
-        return smOutput
+        """ Calculate Online Status: """
+        setattr(sm_output, 'online', True)
 
-    def next(self, smInput):
-        if getattr(smInput, 'run_cmd') == False:
+        """ Calculate SOC """
+        soc = getattr(sm_input, 'soc')
+        kwh_rated = getattr(sm_input, 'kwh_capacity_rated')
+        kw = getattr(sm_input, 'kw')
+        looptime_hr = (time.time() - getattr(sm_input, 'looptime')) / 3600.0
+
+        soc = (soc * kwh_rated - kw * looptime_hr) / kwh_rated
+        setattr(sm_output, 'soc', soc)
+
+        """ Calculate kW output """
+        kw_setpoint = getattr(sm_input, 'kw_setpoint')
+        setattr(sm_output, 'kw', kw_setpoint)
+
+        logging.debug('VirtualEnergyStorage.StateMachine.State output: %s', sm_output.__dict__)
+        return sm_output
+
+    def next(self, sm_input):
+        if getattr(sm_input, 'run_cmd') == False:
             return state_offline
         return state_online
 
 class Input(object):
     """ Input messaging object for the Virtual Energy Storage State Machine
     """
-    def __init__(self, msg):
-        self.__dict__.update(msg)
-
-    def __cmp__(self, other):
-        return self.__dict__ == other.__dict__
+    def __init__(self, sm_input):
+        self.__dict__.update(sm_input)
 
 class Output(object):
     """ Output messaging object for the Virtual Energy Storage State Machine
     """
-    def __init__(self, msg):
-        self.__dict__.update(msg)
+    def __init__(self, outpt):
+        self.__dict__.update(outpt)
 
 # Static variable initialization:
+state_initialize = Initialize()
 state_online = Online()
 state_offline = Offline()
