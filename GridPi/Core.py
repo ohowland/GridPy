@@ -42,7 +42,7 @@ class TagBus(object):
             logging.warning('CORE: tagbus.add_tag(): Attempt to overwrite existing tag: "%s"', tag_name)
         else:                                  # Statement executes if tag is not found
             self._tags[tag_name] = Tag(tag_name, value=default_value, units=units)
-#           logging.info('tagbus.add_tag(): %s tag added to tagbus', tag_name)
+            #logging.info('tagbus.add_tag(): %s tag added to tagbus', tag_name)
 
     def read(self, tag_name):
         try:
@@ -53,8 +53,8 @@ class TagBus(object):
     def write(self, tag_name, value):
         if self._tags.get(tag_name, False):  # Statement executes if tag is found
             self._tags[tag_name].value = value
-#           logging.info('tagbus.write_tag(): writing %s', tag_name)
-        else:                                 # Statement executes if tag is not found
+            #logging.info('tagbus.write_tag(): writing %s', tag_name)
+        else: # Statement executes if tag is not found
             logging.warning("CORE: tagbus.write_tag(): %s tag does not exist", tag_name)
 
     def dump(self):
@@ -149,6 +149,7 @@ class System(object):
         :param asset: Asset object reference
 
         """
+        asset.updateStatus()  # TODO: This does not belong here, assets should get updated in an async fashion elsewhere
         for key, val in asset.status.items():
             tag_name = '_'.join([asset.config['name'], key])
             self.tagbus.write(tag_name, val)
@@ -170,12 +171,10 @@ class System(object):
         for key in asset.ctrl.keys():
             tag = '_'.join([asset.config['name'], key])
             asset.ctrl[key] = self.tagbus.read(tag)
+        asset.updateCtrl()  # TODO: This does not belong here, assets should get update in an async fashion elsewhere
 
-    def update_tagbus_from_process(self):
-
+    def run_processes(self):
+        """ Call run() on all processes in System._processes"""
         logging.debug('CORE: update_tagbus_from_process(): %s', self.process.process_list)
         for process in self.process.process_list:
-
             process.run(self)
-
-

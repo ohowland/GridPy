@@ -65,14 +65,14 @@ class Asset(object):
             if key in self.config.keys():
                 self.config[key] = val
 
-    async def updateStatus(self):
+    def updateStatus(self):
         """ The update status routine on any asset is as follows:
             1. Update internal dictionary from communications interface
             2. Map internal status dictionary to abstract parent interface
         """
         return
 
-    async def updateCtrl(self):
+    def updateCtrl(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.

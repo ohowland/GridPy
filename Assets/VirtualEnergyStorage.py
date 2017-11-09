@@ -94,7 +94,7 @@ class VESDevice(StateMachine.StateMachine):
         """ Run state machine, this would ideally go into a parallel loop.
 
         """
-        sm_output = self.state_machine_output = self.run(Input(self.__dict__))
+        sm_output = self.run(Input(self.__dict__))
 
         for key, val in sm_output.__dict__.items():
             setattr(self, key, val)
@@ -103,7 +103,7 @@ class Initialize(StateMachine.State):
     """ Startup state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualEnergyStorage.StateMachine(): STATE: Initialize')
+        logging.debug('VirtualEnergyStorage.StateMachine.State: Initialize')
         sm_output = Output(dict())
 
         setattr(sm_output, 'initialized', True)
@@ -120,7 +120,7 @@ class Offline(StateMachine.State):
     """ Offline state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualEnergyStorage.StateMachine(): STATE: Offline')
+        logging.debug('VirtualEnergyStorage.StateMachine.State: Offline')
         sm_output = Output(dict())  # create output msg object
 
         """ Calculate Online Status: """
@@ -146,7 +146,7 @@ class Online(StateMachine.State):
     """ Online state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualEnergyStorage.StateMachine(): STATE: Online')
+        logging.debug('VirtualEnergyStorage.StateMachine.State: Online')
         sm_output = Output(dict())  # create output msg object
 
         """ Calculate Online Status: """

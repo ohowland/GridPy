@@ -1,7 +1,7 @@
 import logging
 import time
-from Assets import StateMachine
 
+from Assets import StateMachine
 from Assets.Models import Feeder
 
 
@@ -21,6 +21,7 @@ class VirtualFeeder(Feeder):
             'open_breaker': False
         })
 
+        self.comm_interface = VFDevice()  # Configure the communications interface (virtual component)
         # self.internal_config.update({})
 
         self.initModel(config_dict)  # Write parameters in this model that match keys in the dictionary
@@ -43,13 +44,14 @@ class VirtualFeeder(Feeder):
         self.status['online'] = not self.internal_status['breaker_open']
         return
 
-    def updateControl(self):
+    def updateCtrl(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
         """
         """ MAP TO INTERNAL HERE """
-        self.internal_ctrl['close_breaker'] = self.ctrl['run'] and self.status['enabled']
+        self.internal_ctrl['close_breaker'] = self.ctrl['run']
+        self.internal_ctrl['open_breaker'] = not self.ctrl['run']
 
         """ WRITE COMM INTERFACE """
         self.comm_interface.write(self.internal_ctrl)
@@ -59,7 +61,7 @@ class VFDevice(StateMachine.StateMachine):
     def __init__(self):
 
         # Keep the persistent information about the device here.
-        self.kw = 0
+        self.kw = 0.0
         self.breaker_open = True
         self.breaker_trip = False
         self.close_breaker = False
@@ -93,7 +95,7 @@ class VFDevice(StateMachine.StateMachine):
         """ Run state machine, this would ideally go into a parallel loop.
 
         """
-        sm_output = self.state_machine_output = self.run(Input(self.__dict__))
+        sm_output = self.run(Input(self.__dict__))
 
         for key, val in sm_output.__dict__.items():
             setattr(self, key, val)
@@ -113,7 +115,7 @@ class Initialize(StateMachine.State):
     def next(self, sm_input):
 
         if getattr(sm_input, 'initialized'):
-            if getattr(sm_input, 'breaker_tripped'):
+            if getattr(sm_input, 'breaker_trip'):
                 return state_tripped
             if not getattr(sm_input, 'breaker_open'):
                 return state_closed
@@ -130,7 +132,6 @@ class BreakerTripped(StateMachine.State):
         sm_output = Output(dict())
 
         """ Breaker Trip Booleans """
-        setattr(sm_output, 'breaker_trip', True)
         setattr(sm_output, 'breaker_open', True)
 
         """ Breaker kW Export """
@@ -165,7 +166,7 @@ class BreakerOpen(StateMachine.State):
     def next(self, sm_input):
         if getattr(sm_input, 'breaker_trip'):
             return state_tripped
-        if getattr(sm_input, 'close_breaker') and not getattr(sm_input, 'open_breaker'):
+        if getattr(sm_input, 'close_breaker'): #and not getattr(sm_input, 'open_breaker'):
             return state_closed
         return state_open
 
@@ -174,11 +175,10 @@ class BreakerClosed(StateMachine.State):
     """ Online state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualFeeder.StateMachine.State: Online')
+        logging.debug('VirtualFeeder.StateMachine.State: BreakerClosed')
         sm_output = Output(dict())  # create output msg object
 
         """ Breaker Trip Booleans """
-        setattr(sm_output, 'breaker_trip', False)
         setattr(sm_output, 'breaker_open', False)
 
         """ Breaker kW Export """

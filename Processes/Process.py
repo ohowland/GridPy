@@ -116,7 +116,7 @@ class ProcessInterface(object):
         self._input = handle.read_multi(self.input)
 
     def writeOutput(self, handle):
-        logging.debug('PROCESS INTERFACE: %s attempting to write %s', self, self.output)
+        #logging.info('PROCESS INTERFACE: %s writing %s', self.name, self.output)
         handle.write_multi(self.output)
 
     def do_work(self):
@@ -126,6 +126,18 @@ class ProcessInterface(object):
 class SingleProcess(ProcessInterface):
     def __init__(self):
         super(SingleProcess, self).__init__()
+
+class SingleProcessProxy(SingleProcess):
+    """ SingleProcessProxy class overrides the run command. These classes are the 'Update Status' and 'Write Control'
+        Process that act as markers for beginning and end of the Process Graph. Currently, Update Status and Write
+        Control take place in the Asset class. Potentially the responsibility to call the Asset's methods will be
+        moved to the corresponding process class, but currently it's cleaner to keep them separate.
+    """
+    def __init__(self):
+        super(SingleProcess, self).__init__()
+
+    def run(self, handle):
+        pass
 
 
 class AggregateProcess(ProcessInterface):
@@ -192,7 +204,7 @@ class INV_DMDLMT_PWR_CTRL(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class INV_UPT_STATUS(SingleProcess):
+class INV_UPT_STATUS(SingleProcessProxy):
     def __init__(self, config_dict):
         super(INV_UPT_STATUS, self).__init__()
 
@@ -206,17 +218,15 @@ class INV_UPT_STATUS(SingleProcess):
         logging.debug('PROCESS MODULE: %s constructed', self.name)
 
     def do_work(self):
-        ''' Call on asset to update tagbus from self
+        ''' Using the input, generate the output.
 
         '''
-        self._output['inverter_soc'] = 0.5
-        self._output['inverter_kw'] = 0.0
 
     def __del__(self):
         logging.debug('PROCESS MODULE: %s deconstructed', self.name)
 
 
-class INV_WRT_CTRL(SingleProcess):
+class INV_WRT_CTRL(SingleProcessProxy):
     def __init__(self, config_dict):
         super(INV_WRT_CTRL, self).__init__()
 
@@ -238,7 +248,7 @@ class INV_WRT_CTRL(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class GRID_UPT_STATUS(SingleProcess):
+class GRID_UPT_STATUS(SingleProcessProxy):
     def __init__(self, config_dict):
         super(GRID_UPT_STATUS, self).__init__()
 
@@ -251,7 +261,8 @@ class GRID_UPT_STATUS(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s constructed', self.name)
 
     def do_work(self):
-        self._output['grid_kw'] = 100
+        pass
+        # self._output['grid_kw'] = 100
 
     def __del__(self):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)

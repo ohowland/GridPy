@@ -2,6 +2,8 @@
 
 from Core import TagBus, System
 from Assets import Models
+from Processes import Process
+
 import HMI
 
 import time
@@ -16,7 +18,7 @@ if __name__ == '__main__':
     feeder_config = {
         'model_config': {
             "class_name": 'VirtualFeeder',
-            "name": 'feeer',
+            "name": 'feeder',
             "cap_kw_pos_rated": 20,
             "cap_kw_neg_rated": 20,
             "cap_kvar_pos_rated": 20,
@@ -44,9 +46,47 @@ if __name__ == '__main__':
         }
     }
 
-    asset_cfgs = (feeder_config, gridintertie_config, energystorage_config) # a tuple containing asset configs
+    asset_cfgs = (feeder_config,
+                  gridintertie_config,
+                  energystorage_config) # a tuple containing asset configs
 
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG) # configure logging
+    inv_upt_status_config = {
+        'model_config': {
+            "class_name": 'INV_UPT_STATUS',
+        }
+    }
+    grid_upt_status_config = {
+        'model_config': {
+            "class_name": 'GRID_UPT_STATUS',
+        }
+    }
+
+    inv_soc_pwr_ctrl_config = {
+        'model_config': {
+            "class_name": 'INV_SOC_PWR_CTRL',
+            "inverter_target_soc": 0.6
+        }
+    }
+    inv_dmdlmt_pwr_ctrl_config = {
+        'model_config': {
+            "class_name": 'INV_DMDLMT_PWR_CTRL',
+            "grid_kw_import_limit": 50,
+            "grid_kw_export_limit": 50
+        }
+    }
+    inv_wrt_ctrl_config = {
+        'model_config': {
+            "class_name": 'INV_WRT_CTRL'
+        }
+    }
+
+    process_cfgs = (inv_upt_status_config,  # a tuple containing process configs
+                    grid_upt_status_config,
+                    inv_soc_pwr_ctrl_config,
+                    inv_dmdlmt_pwr_ctrl_config,
+                    inv_wrt_ctrl_config)
+
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO) # configure logging
 
     """ ^^^ Everything above this line should be moved out of this script ^^^
     
@@ -58,38 +98,46 @@ if __name__ == '__main__':
     
     """
     gp = System()                         # Create System container object
-    asset_factory = Models.AssetFactory('Assets') # Create Asset Factory object
 
-    for cfg in asset_cfgs:                        # Add Assets to System, The asset factory acts on a configuration
-        gp.add_asset(asset_factory.factory(cfg))  # dictionary file. using config_class_name to import the correct
-                                                  # concrete asset class.
+    """ Add Assets and Processes to System. The factory functions act on a dict that will eventually be held else
+        where. The configuration property class_name is used to import the concrete asset or process.
+    """
 
-    del asset_factory # Delete the asset factory object, as it will not be used again.
+    asset_factory = Models.AssetFactory('Assets')  # Create Asset Factory object
+    for cfg in asset_cfgs:
+        gp.add_asset(asset_factory.factory(cfg))
+    del asset_factory
 
-    gp.register_tags()            # System will register all Asset object parameters with key 'status_*' as a
-                                  # tag in system.Tagbus object.
+    process_factory = Process.ProcessFactory('Processes')
+    for cfg in process_cfgs:
+        gp.add_process(process_factory.factory(cfg))
+    del process_factory
+
+    gp.register_tags() # System will register all Asset object parameters
+    gp.process.sort(gp)
 
     """ Initalize HMI object
     
     """
 
-#    hmi = HMI.Application(gp) # Create HMI object
+    hmi = HMI.Application(gp) # Create HMI object
 
     """ System dispatch process loop
     
     """
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG) # configure logging
     run = True
     while(run):
         gp.update_tagbus_from_assets()
-        gp.update_tagbus_from_process()
+        gp.run_processes()
         gp.write_assets_from_tagbus()
 
-        gp.tagbus.dump()
-        run = False
-#        time.sleep(1)
-#        try:
-#            hmi.update_idletasks()
-#            hmi.update()
-#        except:
-#            break
+        try:
+            hmi.update_tree(gp)
+            hmi.update_idletasks()
+            hmi.update()
+        except:
+            break
+
+        time.sleep(.1)
+
+    gp.tagbus.dump()

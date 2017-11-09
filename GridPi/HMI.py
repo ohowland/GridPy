@@ -41,36 +41,19 @@ class Application(tk.Frame):
                 tag_category = asset_name + '_config'
                 self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
 
-        """ for tag in system.tagbus.tags.keys():
-            name_components = tag.split('_')
-            tag_category = '_'.join(name_components[0:1])
-            tag_name = '_'.join(name_components[1:])
-            self.tree.insert(tag_category, 0, tag, text=tag_name, value=["0"])
-        """
-
         self.tree.pack(side="top")
 
-        """   
-        for tag in system.tagbus.items():
+    def update_tree(self, system):
 
-            self.tree.insert("asset1", 0, "asset1_tag1",  # Insert Under Parent
-                             text="Tag1", values=("0", "kW"))
+        for asset_name in system.assets.keys():
+            for tag in system.assets[asset_name].status.keys():
+                tag_val = system.read(asset_name + '_' + tag)
+                self.tree.set(asset_name + '_' + tag, 'val', tag_val)
 
-        # tree.insert(pos, child, **kw)
-        self.tree.insert("", 1, "asset1", text="GridIntertie1")   # Parent in tree
-        self.tree.insert("asset1", 0, "asset1_tag1",              # Insert Under Parent
-                         text="Tag1", values=("0","kW"))
+            for tag in system.assets[asset_name].ctrl.keys():
+                tag_val = system.read(asset_name + '_' + tag)
+                self.tree.set(asset_name + '_' + tag, 'val', tag_val)
 
-        self.tree.insert("", 1, "asset2", text="EnergyStorage1")
-        self.tree.insert("asset2", 0, "asset2_tag1",
-                         text="Tag1", values=("0", "kW"))
-
-        self.tree.insert("", 1, "asset3", text="Feeder1")
-        self.tree.insert("asset3", 0, "asset3_tag1",
-                         text="Tag1", values=("0", "kW"))
-
-        self.status = ttk.Treeview()
-        self.tree.pack(side="top")
-        """
-
-
+            for tag in system.assets[asset_name].config.keys():
+                tag_val = system.read(asset_name + '_' + tag)
+                self.tree.set(asset_name + '_' + tag, 'val', tag_val)
