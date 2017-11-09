@@ -1,11 +1,16 @@
+import unittest
+import logging
+
 from GridPi import Core
 from Assets import Models
+from Processes import Process
 
 import unittest
 
-class TestCoreModule(unittest.TestCase):
+class TestGridPi(unittest.TestCase):
 
     def setUp(self):
+
         feeder_config = {
             'model_config': {
                 "class_name": 'VirtualFeeder',
@@ -14,7 +19,6 @@ class TestCoreModule(unittest.TestCase):
                 "cap_kw_neg_rated": 20,
             }
         }
-
         gridintertie_config = {
             'model_config': {
                 "class_name": 'VirtualGridIntertie',
@@ -32,7 +36,7 @@ class TestCoreModule(unittest.TestCase):
             }
         }
 
-        self.asset_cfgs = (feeder_config,
+        asset_cfgs = (feeder_config,
                       gridintertie_config,
                       energystorage_config)  # a tuple containing asset configs
 
@@ -46,7 +50,6 @@ class TestCoreModule(unittest.TestCase):
                 "class_name": 'GRID_UPT_STATUS',
             }
         }
-
         inv_soc_pwr_ctrl_config = {
             'model_config': {
                 "class_name": 'INV_SOC_PWR_CTRL',
@@ -66,45 +69,26 @@ class TestCoreModule(unittest.TestCase):
             }
         }
 
-        self.process_cfgs = (inv_upt_status_config,  # a tuple containing process configs
+        process_cfgs = (inv_upt_status_config,  # a tuple containing process configs
                         grid_upt_status_config,
                         inv_soc_pwr_ctrl_config,
                         inv_dmdlmt_pwr_ctrl_config,
                         inv_wrt_ctrl_config)
 
-        self.test_system = Core.System()
+        self.gp = Core.System()
 
+        asset_factory = Models.AssetFactory('Assets')  # Create Asset Factory object
+        for cfg in asset_cfgs:
+            self.gp.add_asset(asset_factory.factory(cfg))
+        del asset_factory
 
-        self.test_asset.config['name'] = 'test'
+        process_factory = Process.ProcessFactory('Processes')
+        for cfg in process_cfgs:
+            self.gp.add_process(process_factory.factory(cfg))
+        del process_factory
 
-
-
-
-    def test_add_asset(self):
-        self.test_system.add_asset(self.test_asset)
-
-        self.assertEqual(self.test_asset, self.test_system._assets['test'])
-
-    def test_add_process(self):
-        pass
-
-    def test_add_tagbus(self):
-        pass
-
-    def test_register_tags(self):
-        pass
-
-    def test_update_tagbus_from_asset(self):
-        pass
-
-    def test_write_asset_from_tagbus(self):
-        pass
-
-    def write(self):
-        pass
-
-    def read(self):
-        pass
+        self.gp.register_tags() # System will register all Asset object parameters
+        self.gp.process.sort(self.gp)
 
 if __name__ == '__main__':
     unittest.main()

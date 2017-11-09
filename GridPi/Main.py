@@ -125,8 +125,7 @@ if __name__ == '__main__':
     """ System dispatch process loop
     
     """
-    run = True
-    while(run):
+    while(True):
         gp.update_tagbus_from_assets()
         gp.run_processes()
         gp.write_assets_from_tagbus()

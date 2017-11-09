@@ -158,7 +158,7 @@ class TestProcessModule(unittest.TestCase):
     def test_process(self):
 
         self.test_system.update_tagbus_from_assets()
-        self.test_system.update_tagbus_from_process()
+        self.test_system.run_processes()
         self.test_system.write_assets_from_tagbus()
 
         self.assertGreater(self.test_system.read('inverter_soc'), 0.0)

@@ -178,3 +178,4 @@ class System(object):
         logging.debug('CORE: update_tagbus_from_process(): %s', self.process.process_list)
         for process in self.process.process_list:
             process.run(self)
+

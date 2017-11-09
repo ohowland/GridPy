@@ -38,8 +38,8 @@ class Asset(object):
             #  'freq_rated': None,
             #  'volt_rated': None,
             #  'cap_kva_rated': 0.0,
-            #  'cap_kw_pos_rated': 0.0,
-            #  'cap_kw_neg_rated': 0.0,
+            'cap_kw_pos_rated': 0.0,
+            'cap_kw_neg_rated': 0.0,
             #  'cap_kvar_neg_rated': 0.0,
             #  'cap_kvar_pos_rated': 0.0,
         })
