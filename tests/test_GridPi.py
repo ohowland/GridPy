@@ -1,5 +1,7 @@
 import unittest
 import logging
+import asyncio
+import time
 
 from GridPi import Core
 from Assets import Models
@@ -10,6 +12,7 @@ import unittest
 class TestGridPi(unittest.TestCase):
 
     def setUp(self):
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)  # configure logging
 
         feeder_config = {
             'model_config': {
@@ -89,6 +92,21 @@ class TestGridPi(unittest.TestCase):
 
         self.gp.register_tags() # System will register all Asset object parameters
         self.gp.process.sort(self.gp)
+
+    def test_async_asset_update(self):
+        loop_update = asyncio.get_event_loop()
+        for x in range(3):
+            tasks = asyncio.gather(*[x.updateStatus() for x in self.gp.assets.values()])
+            loop_update.run_until_complete(tasks)
+            time.sleep(1)
+
+    def test_async_asset_write(self):
+        loop_write = asyncio.get_event_loop()
+        for x in range(3):
+            tasks = asyncio.gather(*[x.updateCtrl() for x in self.gp.assets.values()])
+            loop_write.run_until_complete(tasks)
+            time.sleep(1)
+        loop_write.close()
 
 if __name__ == '__main__':
     unittest.main()

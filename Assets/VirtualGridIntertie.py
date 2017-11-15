@@ -31,7 +31,7 @@ class VirtualGridIntertie(GridIntertie):
     def __del__(self):
         logging.debug('ASSET INTERFACE: %s deconstructed', self.config['name'])
 
-    def updateStatus(self):
+    async def updateStatus(self):
         """ The update status routine on any asset is as follows:
             1. Update internal dictionary from communications interface
             2. Map internal status dictionary to abstract parent interface
@@ -42,9 +42,8 @@ class VirtualGridIntertie(GridIntertie):
         """ MAP FROM INTERNAL HERE """
         self.status['kw'] = self.internal_status['kw']
         self.status['online'] = not self.internal_status['breaker_open']
-        return
 
-    def updateCtrl(self):
+    async def updateCtrl(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
@@ -55,7 +54,6 @@ class VirtualGridIntertie(GridIntertie):
 
         """ WRITE COMM INTERFACE """
         self.comm_interface.write(self.internal_ctrl)
-        return
 
 class VGIDevice(StateMachine.StateMachine):
     def __init__(self):
