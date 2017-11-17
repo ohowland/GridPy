@@ -1,2 +1,3 @@
 # GridPi
-A load leveling controller for the SPS powerlab.
+
+Currently under development. GridPi is a distributed microgrid control framework, currently tested on a RaspberryPi.
