@@ -1,3 +1,23 @@
+class ProcessFactory(object):
+    """Asset factor for the creating of Asset concrete objects
+
+    """
+    def __init__(self, module_name):
+
+        self.module_name = module_name
+
+    def factory(self):
+        """ Factory function for Asset Class objects
+
+        :param config_dict: Configuration dictonary
+        :return factory_class: Process Class decendent of type listed in config_dict
+        """
+
+        new_module = __import__(self.module_name)
+        new_pclass = getattr(new_module , 'Process')
+        new_class = getattr(new_pclass, class_type)
+        return new_class()
+
 class DBInterface(object):
     def __init__(self):
         pass
