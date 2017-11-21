@@ -73,12 +73,7 @@ class TestCoreModule(unittest.TestCase):
                         inv_wrt_ctrl_config)
 
         self.test_system = Core.System()
-
-
         self.test_asset.config['name'] = 'test'
-
-
-
 
     def test_add_asset(self):
         self.test_system.add_asset(self.test_asset)

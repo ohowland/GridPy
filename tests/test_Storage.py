@@ -57,54 +57,11 @@ class TestGridPi(unittest.TestCase):
 
         self.db = DBSQLite3.DBSQLite3()
 
-        # -------- CREATE TEST DATA ----------:
+        asset_refs = [x for x in self.gp.assets.values()]
 
-        asset_name = [x for x in self.gp.assets.keys()]
-        parameter_name = ['kw', 'kvar']
-
-        for name in asset_name:
-            id = random.randint(0, 100)
-            try:
-                self.db.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
-                               .format(tn=self.db.object_id_table,
-                                       idcn=self.db.object_id_col,
-                                       cn=self.db.object_name_col),
-                               (id, name))
-            except sqlite3.OperationalError as detail:
-                logging.warning('OperationalError: {}'.format(detail.args[0]))
-
-            for param in parameter_name:
-                pid = random.randint(0,1000)
-                # generate parameters for parameter_id_table
-                try:
-                    self.db.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
-                                   .format(tn=self.db.parameter_id_table,
-                                           idcn=self.db.parameter_id_col,
-                                           cn=self.db.parameter_name_col),
-                                   (pid, param))
-                except sqlite3.OperationalError as detail:
-                    logging.warning('OperationalError: {}'.format(detail.args[0]))
-
-                # link parameters and objects in parameter_ownership_table
-                try:
-                    self.db.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
-                                   .format(tn=self.db.parameter_ownership_table,
-                                           idcn=self.db.parameter_id_col,
-                                           cn=self.db.object_id_col), (pid, id))
-                except sqlite3.OperationalError as detail:
-                    logging.warning('OperationalError: {}'.format(detail.args[0]))
-
-                # generate values for parameter_val_table
-                default_parameter_value = -1
-                try:
-                    self.db.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
-                                   .format(tn=self.db.parameter_value_table,
-                                           idcn=self.db.parameter_id_col,
-                                           cn=self.db.parameter_value_col),
-                                   (pid, default_parameter_value))
-
-                except sqlite3.OperationalError as detail:
-                    logging.warning('OperationalError: {}'.format(detail.args[0]))
+        for asset in asset_refs:
+            params = [p for p in asset.status.keys()]
+            self.db.addGroup(asset.config['name'], *params)
 
     def tearDown(self):
         del self.gp
@@ -158,6 +115,6 @@ class TestGridPi(unittest.TestCase):
 
             # create payload of parameter_ids and new current values.
             # give package_tags a reference to the gp.read function which accesses the tagbus data.
-            payload = self.db.package_tags(tag_pid_tuple, self.gp.read)
+            pkg = self.db.package_tags(tag_pid_tuple, self.gp.read)
 
-            self.db.write(payload)
+            self.db.writeParam(payload=pkg)

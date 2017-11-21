@@ -3,6 +3,7 @@ from Storage import DBInterface
 import sqlite3
 import asyncio
 import logging
+from random import randint
 from pathlib import Path
 
 class DBSQLite3(DBInterface.DBInterface):
@@ -11,12 +12,12 @@ class DBSQLite3(DBInterface.DBInterface):
         super(DBSQLite3, self).__init__()
 
         # define path the database
-        self.DB_PATH = Path('tmp_db', 'tmp_db.sqlite')
-        self.DB_DIR = Path(self.DB_PATH.stem)
-        self.DB_DIR.mkdir(exist_ok=True)
+        self.DB_Path = Path('tmp_db', 'tmp_db.sqlite')
+        self.DB_Dir = Path(self.DB_Path.stem)
+        self.DB_Dir.mkdir(exist_ok=True)
 
         # get handle to sqlite3 db
-        self.conn = sqlite3.connect(self.DB_PATH.as_posix())
+        self.conn = self.connect(self.DB_Path)
         self.cursor = self.conn.cursor()
 
         # params used for table setup:
@@ -25,6 +26,7 @@ class DBSQLite3(DBInterface.DBInterface):
         self.parameter_id_col = 'parameter_id'
         self.parameter_name_col = 'parameter_name'
         self.parameter_value_col = 'parameter_value'
+
 
         self.field_type = {self.object_id_col: "INTEGER",
                            self.object_name_col: "TEXT",
@@ -37,11 +39,137 @@ class DBSQLite3(DBInterface.DBInterface):
         self.parameter_ownership_table = 'parameter_ownership_table'
         self.parameter_value_table = 'parameter_value_table'
 
-        self.create_tables()
+        self.constructSchema()
 
     def __del__(self):
         self.conn.commit()
         self.conn.close()
+
+    def connect(self, db_path):
+        conn = sqlite3.connect(db_path.as_posix())
+        return conn
+
+    def disconnect(self):
+        self.conn.commit()
+        self.conn.close()
+
+    def constructSchema(self):
+        self.drop_all_tables()  # drop all tabels from schema
+
+        # -------- Create object ID table --------
+        self.create_table(self.object_id_table,
+                          self.object_id_col,
+                          self.field_type,
+                          self.object_name_col)
+
+        # -------- Create parameter ID table --------
+        self.create_table(self.parameter_id_table,
+                          self.parameter_id_col,
+                          self.field_type,
+                          self.parameter_name_col)
+
+        # -------- Create parameter ownership table --------
+        self.create_table(self.parameter_ownership_table,
+                          self.parameter_id_col,
+                          self.field_type,
+                          self.object_id_col)
+
+        # -------- Create parameter value table --------
+        self.create_table(self.parameter_value_table,
+                          self.parameter_id_col,
+                          self.field_type,
+                          self.parameter_value_col)
+
+    def addGroup(self, group_name, *args):
+        """
+
+        :param group_name: group name for parameters
+        :param args: parameter names to be created and linked to group
+        :return:
+        """
+
+        while True:  # Primary key is a random integer. If it ends up being a duplicate, try again.
+            group_id = randint(0, 1000)
+            try:
+                self.cursor.execute("INSERT INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
+                                .format(tn=self.object_id_table,
+                                        idcn=self.object_id_col,
+                                        cn=self.object_name_col),
+                                (group_id, group_name))
+                break
+            except sqlite3.OperationalError as detail:
+                logging.warning('OperationalError: {}'.format(detail.args[0]))
+                break
+            except sqlite3.IntegrityError as detail:
+                logging.warning('IntegrityError: {} ...duplicate primary key? trying again.'.format(detail.args[0]))
+                pass
+
+
+        for param in args:
+            while True:  # Primary key is a random integer. If it ends up being a duplicate, try again.
+                pid = randint(0,1000)
+                # generate parameters for parameter_id_table
+                try:
+                    self.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
+                                        .format(tn=self.parameter_id_table,
+                                                idcn=self.parameter_id_col,
+                                                cn=self.parameter_name_col),
+                                        (pid, param))
+                    break
+
+                except sqlite3.OperationalError as detail:
+                    logging.warning('OperationalError: {}'.format(detail.args[0]))
+                    break
+                except sqlite3.IntegrityError as detail:
+                    logging.warning('IntegrityError: {} ...duplicate primary key? trying again.'.format(detail.args[0]))
+                    pass
+
+            # link parameters and objects in parameter_ownership_table
+            try:
+                self.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
+                                    .format(tn=self.parameter_ownership_table,
+                                            idcn=self.parameter_id_col,
+                                            cn=self.object_id_col),
+                                    (pid, group_id))
+            except sqlite3.OperationalError as detail:
+                logging.warning('OperationalError: {}'.format(detail.args[0]))
+
+            # generate values for parameter_val_table
+            default_parameter_value = -1
+            try:
+                self.cursor.execute("INSERT OR IGNORE INTO {tn} ({idcn}, {cn}) VALUES (?, ?)" \
+                                    .format(tn=self.parameter_value_table,
+                                            idcn=self.parameter_id_col,
+                                            cn=self.parameter_value_col),
+                                    (pid, default_parameter_value))
+            except sqlite3.OperationalError as detail:
+                logging.warning('OperationalError: {}'.format(detail.args[0]))
+
+    def writeParam(self, **kwargs):
+        """ Write payload to DB schema
+
+        :param kwarg['payload'] = ((parameter_id_1, val_1, ..., parameter_id_n, val_n)):
+        :return:
+        """
+        for pid, val in kwargs['payload']:
+            try:
+                self.cursor.execute("UPDATE {tn} SET {cn}=(?) WHERE {idcn}=(?)". \
+                               format(tn=self.parameter_value_table,
+                                      cn=self.parameter_value_col,
+                                      idcn=self.parameter_id_col),
+                               (val, pid))
+            except sqlite3.OperationalError as detail:
+                logging.warning('OperationalError:', detail)
+
+    def readParam(self, **kwargs):
+        """ Read payload from DB schema
+
+        :param kwarg['payload'] = (parameter_id_1, ..., parameter_id_n):
+        :return: tuple(param_val)
+        """
+
+
+# -------- Helper Functions --------
 
     def sqlite_default_value(self, field_type):
         if field_type == 'INTEGER':
@@ -73,39 +201,8 @@ class DBSQLite3(DBInterface.DBInterface):
             except sqlite3.OperationalError as detail:
                 logging.warning("OperationalError: {}: '{}'".format(detail.args[0], self.object_id_table))
 
-    def create_tables(self):
-        """ Create the tables required by GridPi Core
 
-        """
-        self.drop_all_tables()  # drop all tabels from schema
-
-        # -------- Create object ID table --------
-        self.create_table(self.object_id_table,
-                          self.object_id_col,
-                          self.field_type,
-                          self.object_name_col)
-
-        # -------- Create parameter ID table --------
-        self.create_table(self.parameter_id_table,
-                          self.parameter_id_col,
-                          self.field_type,
-                          self.parameter_name_col)
-
-        # -------- Create parameter ownership table --------
-        self.create_table(self.parameter_ownership_table,
-                          self.parameter_id_col,
-                          self.field_type,
-                          self.object_id_col)
-
-        # -------- Create parameter value table --------
-        self.create_table(self.parameter_value_table,
-                          self.parameter_id_col,
-                          self.field_type,
-                          self.parameter_value_col)
-
-        self.conn.commit()
-
-    def get_pid_tuple_by_asset(self, name=''):
+    def get_pid_tuple_by_asset(self, name):
         """ Given an Asset name, update all parameters owned by that asset with a given value, by name.
 
             Flow of operation without caching:
@@ -118,8 +215,9 @@ class DBSQLite3(DBInterface.DBInterface):
             Because we're doing this often, this operation would benefit from using an index. Caching the final
             (tag_name, parameter_id) list of tuples under the assets name would allow us to skip most of this
             process.
+            @:param name = asset.config['name'] string.
         """
-        asset_name = name.strip()
+        asset_name = name
         # get asset_id using asset_name from asset_id_table
         self.cursor.execute("SELECT ({coi}) FROM {tn} WHERE {cn}=?" \
                             .format(coi=self.object_id_col,
@@ -169,22 +267,6 @@ class DBSQLite3(DBInterface.DBInterface):
             val = read_func(tag)
             pid_val_list.append((pid, val))
         return tuple(pid_val_list)
-
-    def write(self, payload):
-        """
-
-        :param payload = ((parameter_id_1, val_1, ..., parameter_id_n, val_n)):
-        :return:
-        """
-        for pid, val in payload:
-            try:
-                self.cursor.execute("UPDATE {tn} SET {cn}=(?) WHERE {idcn}=(?)". \
-                               format(tn=self.parameter_value_table,
-                                      cn=self.parameter_value_col,
-                                      idcn=self.parameter_id_col),
-                               (val, pid))
-            except sqlite3.OperationalError as detail:
-                logging.warning('OperationalError:', detail)
 
     def drop_all_tables(self):
         tables = (self.object_id_table,
