@@ -1,4 +1,4 @@
-class ProcessFactory(object):
+class StorageFactory(object):
     """Asset factor for the creating of Asset concrete objects
 
     """
@@ -6,7 +6,7 @@ class ProcessFactory(object):
 
         self.module_name = module_name
 
-    def factory(self):
+    def factory(self, class_type):
         """ Factory function for Asset Class objects
 
         :param config_dict: Configuration dictonary
@@ -14,7 +14,7 @@ class ProcessFactory(object):
         """
 
         new_module = __import__(self.module_name)
-        new_pclass = getattr(new_module , 'Process')
+        new_pclass = getattr(new_module , class_type)
         new_class = getattr(new_pclass, class_type)
         return new_class()
 

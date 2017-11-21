@@ -6,6 +6,7 @@ import time
 from GridPi import Core
 from Assets import Models
 from Processes import Process
+from Storage import StorageInterface
 
 import unittest
 
@@ -39,6 +40,7 @@ class TestGridPi(unittest.TestCase):
             }
         }
 
+        # asset configs used to instantiate asset objects through the ProcessFactory object.
         asset_cfgs = (feeder_config,
                       gridintertie_config,
                       energystorage_config)  # a tuple containing asset configs
@@ -72,7 +74,8 @@ class TestGridPi(unittest.TestCase):
             }
         }
 
-        process_cfgs = (inv_upt_status_config,  # a tuple containing process configs
+        # process configs used to instantiate process objects through the ProcessFactory object.
+        process_cfgs = (inv_upt_status_config,
                         grid_upt_status_config,
                         inv_soc_pwr_ctrl_config,
                         inv_dmdlmt_pwr_ctrl_config,
@@ -80,15 +83,18 @@ class TestGridPi(unittest.TestCase):
 
         self.gp = Core.System()
 
-        asset_factory = Models.AssetFactory('Assets')  # Create Asset Factory object
+        asset_factory = Models.AssetFactory('Assets')  # create AssetFactory object
         for cfg in asset_cfgs:
             self.gp.add_asset(asset_factory.factory(cfg))
         del asset_factory
 
-        process_factory = Process.ProcessFactory('Processes')
+        process_factory = Process.ProcessFactory('Processes') # create ProcessFactory object
         for cfg in process_cfgs:
             self.gp.add_process(process_factory.factory(cfg))
         del process_factory
+
+        storage_factory = StorageInterface.StorageFactory('Storage')
+        self.db = storage_factory.factory('DBSQLite3')
 
         self.gp.register_tags() # System will register all Asset object parameters
         self.gp.process.sort(self.gp)

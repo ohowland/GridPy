@@ -24,7 +24,6 @@ class ProcessFactory(object):
         new_class = getattr(new_pclass, class_type)
         return new_class(config_dict)
 
-
 class ProcessContainer(object):
     def __init__(self):
         self._process_list = list()
