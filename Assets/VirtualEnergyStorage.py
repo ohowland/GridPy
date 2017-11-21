@@ -1,5 +1,8 @@
 import logging
 import time
+import random
+import asyncio
+
 from Assets import StateMachine
 
 from Assets.Models import EnergyStorage
@@ -34,7 +37,7 @@ class VirtualEnergyStorage(EnergyStorage):
             2. Map internal status dictionary to abstract parent interface
         """
         """ READ COMM INTERFACE """
-        self.comm_interface.read(self.internal_status)  # Performs device read and populates internal_status
+        await self.comm_interface.read(self.internal_status)  # Performs device read and populates internal_status
 
         """ MAP from INTERNAL to ARCHETYPE """
         self.status['kw'] = self.internal_status['kw']
@@ -51,7 +54,7 @@ class VirtualEnergyStorage(EnergyStorage):
         self.internal_ctrl['run_cmd'] = self.ctrl['run']
 
         """ WRITE COMM INTERFACE """
-        self.comm_interface.write(self.internal_ctrl)
+        await self.comm_interface.write(self.internal_ctrl)
 
 
 class VESDevice(StateMachine.StateMachine):
@@ -70,22 +73,25 @@ class VESDevice(StateMachine.StateMachine):
         StateMachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
                                            Input(self.__dict__))
 
-    def read(self, internal_status):
+    async def read(self, internal_status):
         """ Read state_machine_output class dict keys into internal_status
         """
+
         self.deviceUpdate()
+        await asyncio.sleep(random.random())  # FUZZING
         self.looptime = time.time()
 
         for key in internal_status.keys():
             internal_status[key] = self.__dict__[key]
 
-    def write(self, internal_ctrl):
+    async def write(self, internal_ctrl):
         """ Write internal_ctrl values to state_machine_input class dict keys
         """
         for key, val in internal_ctrl.items():
             self.__dict__[key] = val
 
         self.deviceUpdate()
+        await asyncio.sleep(random.random())  # FUZZING
         self.looptime = time.time()
 
     def deviceUpdate(self):

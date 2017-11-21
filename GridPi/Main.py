@@ -8,6 +8,7 @@ import HMI
 
 import time
 import logging
+import asyncio
 
 # Read system configuration
 if __name__ == '__main__':
@@ -120,23 +121,38 @@ if __name__ == '__main__':
     
     """
 
-    hmi = HMI.Application(gp) # Create HMI object
+    #hmi = HMI.Application(gp) # Create HMI object
 
     """ System dispatch process loop
     
     """
+
+    loop = asyncio.get_event_loop()
+
     while(True):
+        # Collect updateStatus() method references for each asset and package as coroutine task.
+        update_asset_tasks = asyncio.gather(*[x.updateStatus() for x in gp.assets.values()])
+        loop.run_until_complete(update_asset_tasks)
+
+        # Push data from assets to the tagbus
         gp.update_tagbus_from_assets()
+
+        # Run process
         gp.run_processes()
+
+        # Push data from tagbus to assets
         gp.write_assets_from_tagbus()
 
-        try:
-            hmi.update_tree(gp)
-            hmi.update_idletasks()
-            hmi.update()
-        except:
-            break
+        # Collect updateWrite() method references for each asset and package as coroutine task.
+        write_asset_tasks = asyncio.gather(*[x.updateCtrl() for x in gp.assets.values()])
+        loop.run_until_complete(write_asset_tasks)
 
-        time.sleep(.1)
+        #try:
+            #hmi.update_tree(gp)
+            #hmi.update_idletasks()
+            #hmi.update()
+        #except:
+            #break
 
+    loop.close()
     gp.tagbus.dump()

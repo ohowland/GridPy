@@ -1,5 +1,7 @@
 import logging
 import time
+import asyncio
+import random
 
 from Assets import StateMachine
 from Assets.Models import Feeder
@@ -37,7 +39,7 @@ class VirtualFeeder(Feeder):
             2. Map internal status dictionary to abstract parent interface
         """
         """ READ COMM INTERFACE """
-        self.comm_interface.read(self.internal_status)
+        await self.comm_interface.read(self.internal_status)
 
         """ MAP FROM INTERNAL HERE """
         self.status['kw'] = self.internal_status['kw']
@@ -53,7 +55,7 @@ class VirtualFeeder(Feeder):
         self.internal_ctrl['open_breaker'] = not self.ctrl['run']
 
         """ WRITE COMM INTERFACE """
-        self.comm_interface.write(self.internal_ctrl)
+        await self.comm_interface.write(self.internal_ctrl)
 
 class VFDevice(StateMachine.StateMachine):
     def __init__(self):
@@ -71,22 +73,24 @@ class VFDevice(StateMachine.StateMachine):
         StateMachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
                                            Input(self.__dict__))
 
-    def read(self, internal_status):
+    async def read(self, internal_status):
         """ Read state_machine_output class dict keys into internal_status
         """
         self.deviceUpdate()
+        await asyncio.sleep(random.random())  # FUZZING
         self.looptime = time.time()
 
         for key in internal_status.keys():
             internal_status[key] = self.__dict__[key]
 
-    def write(self, internal_ctrl):
+    async def write(self, internal_ctrl):
         """ Write internal_ctrl values to state_machine_input class dict keys
         """
         for key, val in internal_ctrl.items():
             self.__dict__[key] = val
 
         self.deviceUpdate()
+        await asyncio.sleep(random.random())  # FUZZING
         self.looptime = time.time()
 
     def deviceUpdate(self):

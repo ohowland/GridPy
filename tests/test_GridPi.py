@@ -96,6 +96,7 @@ class TestGridPi(unittest.TestCase):
     def test_async_asset_update(self):
         loop_update = asyncio.get_event_loop()
         for x in range(3):
+            # Collect updateStatus() method references for each asset and package as coroutine task.
             tasks = asyncio.gather(*[x.updateStatus() for x in self.gp.assets.values()])
             loop_update.run_until_complete(tasks)
             time.sleep(1)
@@ -103,6 +104,7 @@ class TestGridPi(unittest.TestCase):
     def test_async_asset_write(self):
         loop_write = asyncio.get_event_loop()
         for x in range(3):
+            # Collect updateStatus() method references for each asset and package as coroutine task.
             tasks = asyncio.gather(*[x.updateCtrl() for x in self.gp.assets.values()])
             loop_write.run_until_complete(tasks)
             time.sleep(1)

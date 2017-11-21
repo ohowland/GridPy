@@ -149,7 +149,6 @@ class System(object):
         :param asset: Asset object reference
 
         """
-        asset.updateStatus()  # TODO: This does not belong here, assets should get updated in an async fashion elsewhere
         for key, val in asset.status.items():
             tag_name = '_'.join([asset.config['name'], key])
             self.tagbus.write(tag_name, val)
@@ -171,7 +170,6 @@ class System(object):
         for key in asset.ctrl.keys():
             tag = '_'.join([asset.config['name'], key])
             asset.ctrl[key] = self.tagbus.read(tag)
-        asset.updateCtrl()  # TODO: This does not belong here, assets should get update in an async fashion elsewhere
 
     def run_processes(self):
         """ Call run() on all processes in System._processes"""
