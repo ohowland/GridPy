@@ -66,7 +66,7 @@ class TestModelModule(unittest.TestCase):
         self.assertEqual(self.test_asset.status['online'], False)
         self.assertEqual(self.test_asset.status['kw'], 0.0)
 
-    def test_VES_state_machine_kwh(self):
+    def test_VES_state_machine_soc_tracking(self):
         logging.debug('********** Test VirtualEnergyStorage soc tracking **********')
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])  # Virtual Energy Persistence
@@ -82,7 +82,7 @@ class TestModelModule(unittest.TestCase):
 
         self.assertLess(self.test_asset.status['soc'], start_soc)
 
-    def test_VF_state_machine_(self):
+    def test_VF_state_machine(self):
         logging.debug('********** Test VirtualFeeder state machine **********')
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['FEEDER'])  # Virtual Feeder
@@ -98,7 +98,7 @@ class TestModelModule(unittest.TestCase):
         self.loop.run_until_complete(self.test_asset.updateStatus())
         self.loop.run_until_complete(self.test_asset.updateCtrl())
 
-    def test_VGI_state_machine_(self):
+    def test_VGI_state_machine(self):
         logging.debug('********** Test VirtualGridIntertie state machine **********')
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
@@ -116,4 +116,5 @@ class TestModelModule(unittest.TestCase):
         self.loop.run_until_complete(self.test_asset.updateCtrl())
 
 if __name__ == '__main__':
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     unittest.main()

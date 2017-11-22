@@ -71,13 +71,13 @@ class System(object):
     """
 
     def __init__(self):
-        self._assets = dict()
+        self._assets = list()
         self._process = Process.ProcessContainer()
         self._tagbus = TagBus()
 
     @property
     def assets(self):
-        return self._assets
+        return tuple(self._assets)
 
     @property
     def tagbus(self):
@@ -102,23 +102,22 @@ class System(object):
             tag_dict[key] = self.read(key)
         return tag_dict
 
-    def add_asset(self, asset):
-        new_asset = dict()
-        new_asset[asset.config['name']] = asset
-        self._assets.update(new_asset)
+    def addAsset(self, asset):
+        #new_asset = dict()
+        #new_asset[asset.config['name']] = asset
+        self._assets.append(asset)
 
-    def add_process(self, new_process):
+    def addProcess(self, new_process):
         self._process.add_process(new_process)
 
-    def add_tagbus(self, tagbus):
+    def addTagbus(self, tagbus):
         self._tagbus = tagbus
-        return
 
-    def register_tags(self):
+    def registerTags(self):
         """ Registers asset status and control parameters with the Tagbus
 
         """
-        for asset in self.assets.values():
+        for asset in self.assets:
 
             for key in asset.status.keys():
                 tag_name = '_'.join([asset.config['name'], key])
@@ -136,14 +135,14 @@ class System(object):
             for tag_name in process.output.keys():
                 self.tagbus.add(tag_name, default_value=None, units=None)
 
-    def update_tagbus_from_assets(self):
+    def updateTagbusFromAssets(self):
         """ run update_tagbus_from_asset(asset) on all assets registered in the system
 
         """
-        for asset in self.assets.values():
-            self.update_tagbus_from_asset(asset)
+        for asset in self.assets:
+            self.updateTagbusFromAsset(asset)
 
-    def update_tagbus_from_asset(self, asset):
+    def updateTagbusFromAsset(self, asset):
         """ Scan read parameters in asset and push that data onto the Tagbus
 
         :param asset: Asset object reference
@@ -154,14 +153,14 @@ class System(object):
             self.tagbus.write(tag_name, val)
         return
 
-    def write_assets_from_tagbus(self):
+    def writeAssetsFromTagbus(self):
         """ run update_tagbus_from_asset(asset) on all assets registered in the system
 
         """
-        for asset in self.assets.values():
-            self.write_asset_from_tagbus(asset)
+        for asset in self.assets:
+            self.writeAssetFromTagbus(asset)
 
-    def write_asset_from_tagbus(self, asset):
+    def writeAssetFromTagbus(self, asset):
         """ Scan write parameters in asset from Tagbus data
 
         :param asset: Asset object reference
@@ -171,7 +170,7 @@ class System(object):
             tag = '_'.join([asset.config['name'], key])
             asset.ctrl[key] = self.tagbus.read(tag)
 
-    def run_processes(self):
+    def runProcesses(self):
         """ Call run() on all processes in System._processes"""
         logging.debug('CORE: update_tagbus_from_process(): %s', self.process.process_list)
         for process in self.process.process_list:

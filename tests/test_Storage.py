@@ -19,16 +19,16 @@ class TestStorageClass(unittest.TestCase):
         parser.read_dict({'FEEDER':
                                    {'class_name': 'VirtualFeeder',
                                     'name': 'feeder'},
-                               'ENERGY_STORAGE':
+                          'ENERGY_STORAGE':
                                    {'class_name': 'VirtualEnergyStorage',
                                     'name': 'inverter'},
-                               'GRID_INTERTIE':
+                          'GRID_INTERTIE':
                                    {'class_name': 'VirtualGridIntertie',
                                     'name': 'grid'}})
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
-            self.gp.add_asset(asset_factory.factory(parser[cfg]))
+            self.gp.addAsset(asset_factory.factory(parser[cfg]))
         del asset_factory
 
         # configure persistence model
@@ -42,10 +42,9 @@ class TestStorageClass(unittest.TestCase):
             self.db = persistence_factory.factory(parser[cfg])
         del persistence_factory
 
-        self.gp.register_tags() # System will register all Asset object parameters
-        self.gp.process.sort(self.gp)
+        self.gp.registerTags() # System will register all Asset object parameters
 
-        asset_refs = [x for x in self.gp.assets.values()]
+        asset_refs = [x for x in self.gp.assets]
 
         for asset in asset_refs:
             params = [p for p in asset.status.keys()]
@@ -56,7 +55,7 @@ class TestStorageClass(unittest.TestCase):
         del self.db
 
     def test_get_pid_names(self):
-        for asset in self.gp.assets.values():
+        for asset in self.gp.assets:
             # get all parameter_id's associated with feeder
             pid_tuple = self.db.get_pid_names(asset.config['name'])
 
@@ -64,7 +63,7 @@ class TestStorageClass(unittest.TestCase):
             self.assertIsNotNone(pid_tuple)
 
     def test_get_tag_pid_tuple(self):
-        for asset in self.gp.assets.values():
+        for asset in self.gp.assets:
             # get all parameter_id's associated with a storage 'group' (in our case we group by asset name)
             name_pid_tuple = self.db.get_pid_names(asset.config['name'])
 
@@ -81,7 +80,7 @@ class TestStorageClass(unittest.TestCase):
             self.assertIsNotNone(tag_pid_tuple)
 
     def test_package_tags(self):
-        for asset in self.gp.assets.values():
+        for asset in self.gp.assets:
             # get all parameter_id's associated with a storage 'group' (in our case we group by asset name)
             name_pid_tuple = self.db.get_pid_names(asset.config['name'])
 
@@ -95,13 +94,13 @@ class TestStorageClass(unittest.TestCase):
 
             # create payload of parameter_ids and new current values.
             # give package_tags a reference to the gp.read function which accesses the tagbus data.
-            payload = self.db.package_tags(tag_pid_tuple, self.gp.read)
+            payload = self.db.packageTags(tag_pid_tuple, self.gp.read)
 
             self.assertNotEqual(payload, {})
             self.assertIsNotNone(payload)
 
     def test_write_payload(self):
-        for asset in self.gp.assets.values():
+        for asset in self.gp.assets:
             # get all parameter_id's associated with a storage 'group' (in our case we group by asset name)
             name_pid_tuple = self.db.get_pid_names(asset.config['name'])
 
@@ -119,6 +118,10 @@ class TestStorageClass(unittest.TestCase):
 
             # create payload of parameter_ids and new current values.
             # give package_tags a reference to the gp.read function which accesses the tagbus data.
-            pkg = self.db.package_tags(tag_pid_tuple, self.gp.read)
+            pkg = self.db.packageTags(tag_pid_tuple, self.gp.read)
 
             self.db.writeParam(payload=pkg)
+
+if __name__ == '__main__':
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+    unittest.main()

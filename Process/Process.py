@@ -65,13 +65,13 @@ class ProcessContainer(object):
         self._process_dict.update({new_process.name: new_process})
         self._process_list.append(new_process)
 
-    def sort(self, system):
+    def sort(self):
         """ Get dependency topological sort of current processes
 
         """
-        temp_graph = GraphProcess.GraphProcess(self)
-        temp_graph.build_adj_list()
-        process_names_topo_sort = GraphProcess.DFS(temp_graph).topological_sort
+        temp_graph = GraphProcess.GraphProcess(self)  # Note that self IS a ProcessContainer.
+        temp_graph.buildAdjList()
+        process_names_topo_sort = GraphProcess.DFS(temp_graph).topologicalSort
 
         self._process_list = []
         for process_name in process_names_topo_sort:

@@ -3,18 +3,18 @@
 import unittest
 import logging
 import asyncio
+from configparser import ConfigParser
 
 from Models import Models
 from GridPi import Core
 from Process import Process
-from configparser import ConfigParser
+from Process import GraphProcess
+
+
 
 class TestProcessModule(unittest.TestCase):
-
     def setUp(self):
         "Setup for Process Module Testing"
-        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
-
         self.test_system = Core.System()  # Create System container object
 
         # configure asset models
@@ -31,7 +31,7 @@ class TestProcessModule(unittest.TestCase):
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
-            self.test_system.add_asset(asset_factory.factory(self.parser[cfg]))
+            self.test_system.addAsset(asset_factory.factory(self.parser[cfg]))
         del asset_factory
 
         # configure processes
@@ -46,16 +46,18 @@ class TestProcessModule(unittest.TestCase):
                                'process_5': {'class_name': 'INV_WRT_CTRL'}})
         process_factory = Process.ProcessFactory()
         for cfg in self.parser.sections():
-            self.test_system.add_process(process_factory.factory(self.parser[cfg]))
+            self.test_system.addProcess(process_factory.factory(self.parser[cfg]))
         del process_factory
 
-        self.test_system.register_tags()  # System will register all Asset object parameters with key 'status_*' as a
+        self.test_system.registerTags()  # System will register all Asset object parameters with key 'status_*' as a
                                           # tag in system.Tagbus object.
 
         # Get an asyncio event loop so that we can run updateStatus() and updateCtrl() on assets.
         self.loop = asyncio.get_event_loop()
 
     def test_process_factory(self):
+        """ To test if the process factory returns an object of the desired class
+        """
         logging.debug('********** Test Process: test_process_factory **********')
 
         self.parser.clear()
@@ -69,7 +71,7 @@ class TestProcessModule(unittest.TestCase):
         self.assertEqual(test_class.config['inverter_target_soc'], 0.6)
 
     def test_tag_aggregation(self):
-        ''' Test the tag aggregation class.
+        ''' Test the tag aggregation class constructor aggregates two classes with similar outputs
 
         '''
         logging.debug('********** Test Process: test_tag_aggregation **********')
@@ -77,13 +79,13 @@ class TestProcessModule(unittest.TestCase):
 
         inv_soc_pwr_ctrl_config = {
             "class_name": 'INV_SOC_PWR_CTRL',
-            "inverter_target_soc": 0.6
+            "inverter_target_soc": 0.5
         }
 
         inv_dmdlmt_pwr_ctrl_config = {
             "class_name": 'INV_DMDLMT_PWR_CTRL',
-            "grid_kw_import_limit": 50,
-            "grid_kw_export_limit": 50
+            "grid_kw_import_limit": 10,
+            "grid_kw_export_limit": 10
         }
 
         inv_soc_pwr_ctrl = Process.INV_SOC_PWR_CTRL(inv_soc_pwr_ctrl_config)
@@ -92,17 +94,12 @@ class TestProcessModule(unittest.TestCase):
         process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
         inv_pwr_ctrl_agg = Process.AggregateProcessSummation(process_list)
 
-        inv_pwr_ctrl_agg.run(self.test_system)
+        # Aggregate object is created
+        self.assertIsInstance(inv_pwr_ctrl_agg, Process.AggregateProcess)
 
-        final = self.test_system.read(tag)
-
-        assert True
-        #self.assertEqual(final, 75)
-
-    def test_graph_dependencies(self):
-        logging.debug('********** Test Process: test_graph_dependencies **********')
-
-        self.test_system.process.sort(self.test_system)
+        # Aggregate object composed of given objects
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], Process.INV_SOC_PWR_CTRL)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], Process.INV_DMDLMT_PWR_CTRL)
 
     def test_process(self):
         logging.debug('********** Test Process: test_process **********')
@@ -111,17 +108,80 @@ class TestProcessModule(unittest.TestCase):
 
         # run updateStatus() twice. virtual components first update is an initializion state, then they begin to report.
         for x in range(2):
-            tasks = asyncio.gather(*[x.updateStatus() for x in self.test_system.assets.values()])
+            tasks = asyncio.gather(*[x.updateStatus() for x in self.test_system.assets])
             self.loop.run_until_complete(tasks)
 
-        self.test_system.update_tagbus_from_assets()
-        self.test_system.run_processes()
-        self.test_system.write_assets_from_tagbus()
+        self.test_system.updateTagbusFromAssets()
+        self.test_system.runProcesses()
+        self.test_system.writeAssetsFromTagbus()
 
-        tasks = asyncio.gather(*[x.updateCtrl() for x in self.test_system.assets.values()])
+        tasks = asyncio.gather(*[x.updateCtrl() for x in self.test_system.assets])
         self.loop.run_until_complete(tasks)
 
         self.assertGreater(self.test_system.read('inverter_soc'), 0.0)
 
+    def test_GraphDependencies_sort(self):
+        logging.debug('********** Test Process: test_graph_dependencies **********')
+        self.test_system.process.sort()
+
+class TestGraphProcess(unittest.TestCase):
+    def setUp(self):
+        self.test_system = Core.System()  # Create System container object
+
+        # configure processes
+        parser = ConfigParser()
+        parser.read_dict({'process_1': {'class_name': 'INV_UPT_STATUS'},
+                               'process_2': {'class_name': 'GRID_UPT_STATUS'},
+                               'process_3': {'class_name': 'INV_SOC_PWR_CTRL',
+                                             'inverter_target_soc': 0.6},
+                               'process_4': {'class_name': 'INV_DMDLMT_PWR_CTRL',
+                                             'grid_kw_import_limit': 20,
+                                             'grid_kw_export_limit': 20},
+                               'process_5': {'class_name': 'INV_WRT_CTRL'}})
+        process_factory = Process.ProcessFactory()
+        for cfg in parser.sections():
+            self.test_system.addProcess(process_factory.factory(parser[cfg]))
+        del process_factory
+
+    def test_Edgenode_constructor(self):
+        node1 = GraphProcess.Edgenode()
+        node2 = GraphProcess.Edgenode()
+
+        node1.name = 'first_node'
+        node2.name = 'second_node'
+
+        node1.next = node2
+
+        self.assertEqual(node1.next, node2)
+        self.assertEqual(node1.next.name, 'second_node')
+
+    def test_Graph_constructor(self):
+        pass
+
+    def test_Graph_buildAdjList(self):
+        pass
+
+    def test_Graph_insertEdge(self):
+        pass
+
+    def test_Graph_topologicalSort(self):
+        pass
+
+    def test_GraphProcess_constructor(self):
+        pass
+
+    def test_DFS_constructor(self):
+        pass
+
+    def test_GraphDependencies_findInputSinks(self):
+        pass
+
+    def test_GraphDependencies_findOutputSources(self):
+        pass
+
+    def test_GraphDependencies_resolveDuplicateSources(self):
+        pass
+
 if __name__ == '__main__':
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     unittest.main()

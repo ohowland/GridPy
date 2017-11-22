@@ -2,6 +2,7 @@ from GridPi import Core
 from Models import Models
 
 import unittest
+import logging
 from configparser import ConfigParser
 
 class TestCoreModule(unittest.TestCase):
@@ -22,9 +23,9 @@ class TestCoreModule(unittest.TestCase):
             self.test_asset = (asset_factory.factory(self.parser[cfg]))
         del asset_factory
 
-        self.test_system.add_asset(self.test_asset)
+        self.test_system.addAsset(self.test_asset)
 
-        self.assertEqual(self.test_asset, self.test_system._assets['test'])
+        self.assertEqual(self.test_asset, self.test_system._assets[0])
 
     def test_add_process(self):
         pass
@@ -48,4 +49,5 @@ class TestCoreModule(unittest.TestCase):
         pass
 
 if __name__ == '__main__':
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     unittest.main()

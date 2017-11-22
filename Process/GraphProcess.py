@@ -27,7 +27,7 @@ class Graph(object):
 
         self.edge_data_input = None
 
-    def build_adj_list(self):
+    def buildAdjList(self):
         logging.debug('GRAPH PROCESS: input graph edges: %s', self.edge_data_input)
 
         self.nedges = len(self.edge_data_input)  # Find the number of edges, by halving the input data
@@ -39,9 +39,9 @@ class Graph(object):
         self.nverticies = len(vertex_set)
 
         for edge in self.edge_data_input:  # Insert Edge
-            self.insert_edge(edge[0], edge[1], True)
+            self.insertEdge(edge[0], edge[1], True)
 
-    def insert_edge(self, start_node, end_node, directed):
+    def insertEdge(self, start_node, end_node, directed):
 
         edge = Edgenode()
         edge.name = end_node.name
@@ -55,15 +55,15 @@ class Graph(object):
             self.edges[edge.name] = None
 
         if not directed:
-            self.insert_edge(end_node, start_node, True)
+            self.insertEdge(end_node, start_node, True)
         else:
             self.nedges += 1
 
-    def topological_sort(self):
+    def topologicalSort(self):
         dfs = DFS(self)
-        return dfs.topological_sort
+        return dfs.topologicalSort
 
-    def print_adjlist(self):
+    def printAdjList(self):
         for start_node, edge in self.edges.items():
             print(start_node, end=': ')
 
@@ -78,15 +78,15 @@ class GraphProcess(Graph):
     """ Interfaces a standard graph object with a system object
 
     """
-    def __init__(self, process):
+    def __init__(self, process_container):
         super(GraphProcess, self).__init__()
 
         self.GD = GraphDependencies()
-        self.GD.find_input_sinks(process.process_list)
-        self.GD.find_output_sources(process.process_list)
-        self.GD.resolve_duplicate_sources(process.process_dict)
+        self.GD.findInputSinks(process_container.process_list)
+        self.GD.findOutputSources(process_container.process_list)
+        self.GD.resolveDuplicateSources(process_container.process_dict)
 
-        self.edge_data_input = self.GD.edge_list()
+        self.edge_data_input = self.GD.edgeList()
 
 
 class DFS(object):
@@ -94,7 +94,7 @@ class DFS(object):
 
     """
     @property
-    def topological_sort(self):
+    def topologicalSort(self):
         return self._topological_sort
 
     def __init__(self, graph):
@@ -143,13 +143,13 @@ class DFS(object):
                 return
             end_node = end_node.next
 
-        self.process_vertex_late(start_node)
+        self.processVertexLate(start_node)
         self.time += 1
         self.exit_time[start_node] = self.time
         self.processed[start_node] = True
         # print('{} processed'.format(start_node))
 
-    def process_vertex_late(self, node):
+    def processVertexLate(self, node):
         self._topological_sort.append(node)
 
 
@@ -164,7 +164,7 @@ class GraphDependencies(object):
         self.source = dict()
         self.aggregate = dict()
 
-    def find_input_sinks(self, process_list):
+    def findInputSinks(self, process_list):
         """ For an input in any process, log that process as a 'dependent' of that input in the dependent dictionary
 
         """
@@ -177,7 +177,7 @@ class GraphDependencies(object):
 
         logging.debug('GRAPH PROCESS: pre-process self.sink: %s', self.sink)
 
-    def find_output_sources(self, process_list):
+    def findOutputSources(self, process_list):
         """ For an output in any process, log that process as an 'indenpendent source' of that output in the
         indenpendent dictonary.
         """
@@ -190,7 +190,7 @@ class GraphDependencies(object):
 
         logging.debug('GRAPH PROCESS: pre-process self.source: %s', self.source)
 
-    def resolve_duplicate_sources(self, process_dict):
+    def resolveDuplicateSources(self, process_dict):
         for process_list in self.source.values():
             if len(process_list) > 1:
 
@@ -216,7 +216,7 @@ class GraphDependencies(object):
 
         logging.debug('GRAPH PROCESS: post-process self.sink: %s', self.sink)
 
-    def edge_list(self):
+    def edgeList(self):
 
         edges = []
 

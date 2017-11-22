@@ -31,7 +31,7 @@ class TestGridPi(unittest.TestCase):
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
-            self.gp.add_asset(asset_factory.factory(parser[cfg]))
+            self.gp.addAsset(asset_factory.factory(parser[cfg]))
         del asset_factory
 
         # configure processes
@@ -46,7 +46,7 @@ class TestGridPi(unittest.TestCase):
                                'process_5': {'class_name': 'INV_WRT_CTRL'}})
         process_factory = Process.ProcessFactory()
         for cfg in parser.sections():
-            self.gp.add_process(process_factory.factory(parser[cfg]))
+            self.gp.addProcess(process_factory.factory(parser[cfg]))
         del process_factory
 
         parser.clear()
@@ -59,21 +59,21 @@ class TestGridPi(unittest.TestCase):
             self.db = persistence_factory.factory(parser[cfg])
         del persistence_factory
 
-        self.gp.register_tags() # System will register all Asset object parameters
-        self.gp.process.sort(self.gp)
+        self.gp.registerTags() # System will register all Asset object parameters
+        self.gp.process.sort()
 
     def test_async_asset_update(self):
         loop_update = asyncio.get_event_loop()
         for x in range(3):
             # Collect updateStatus() method references for each asset and package as coroutine task.
-            tasks = asyncio.gather(*[x.updateStatus() for x in self.gp.assets.values()])
+            tasks = asyncio.gather(*[x.updateStatus() for x in self.gp.assets])
             loop_update.run_until_complete(tasks)
 
     def test_async_asset_write(self):
         loop_write = asyncio.get_event_loop()
         for x in range(3):
             # Collect updateStatus() method references for each asset and package as coroutine task.
-            tasks = asyncio.gather(*[x.updateCtrl() for x in self.gp.assets.values()])
+            tasks = asyncio.gather(*[x.updateCtrl() for x in self.gp.assets])
             loop_write.run_until_complete(tasks)
 
 if __name__ == '__main__':

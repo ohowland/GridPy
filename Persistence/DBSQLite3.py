@@ -59,31 +59,31 @@ class DBSQLite3(Persistence.DBInterface):
         self.conn.close()
 
     def constructSchema(self):
-        self.drop_all_tables()  # drop all tabels from schema
+        self.dropAllTables()  # drop all tabels from schema
 
         # create group_id table. this table links group_ids group_names
-        self.create_table(self.group_id_table,
-                          self.group_id_col,
-                          self.field_type,
-                          self.group_name_col)
+        self.createTable(self.group_id_table,
+                         self.group_id_col,
+                         self.field_type,
+                         self.group_name_col)
 
         # create parameter_id table. this table links parameter_ids with parameter_names
-        self.create_table(self.parameter_id_table,
-                          self.parameter_id_col,
-                          self.field_type,
-                          self.parameter_name_col)
+        self.createTable(self.parameter_id_table,
+                         self.parameter_id_col,
+                         self.field_type,
+                         self.parameter_name_col)
 
         # create parameter ownership table. this table links parameter_ids to group_ids
-        self.create_table(self.parameter_ownership_table,
-                          self.parameter_id_col,
-                          self.field_type,
-                          self.group_id_col)
+        self.createTable(self.parameter_ownership_table,
+                         self.parameter_id_col,
+                         self.field_type,
+                         self.group_id_col)
 
         # create parameter value table. this table links parameter_ids with parameter_values
-        self.create_table(self.parameter_value_table,
-                          self.parameter_id_col,
-                          self.field_type,
-                          self.parameter_value_col)
+        self.createTable(self.parameter_value_table,
+                         self.parameter_id_col,
+                         self.field_type,
+                         self.parameter_value_col)
 
     def addGroup(self, group_name, *args):
         """ Add a new group to the database schema. this function will create the group and assign it a unique group_id.
@@ -169,7 +169,7 @@ class DBSQLite3(Persistence.DBInterface):
 
 # -------- Helper Functions --------
 
-    def create_table(self, table_name, primary_key, field_types, *args):
+    def createTable(self, table_name, primary_key, field_types, *args):
         try:
             self.cursor.execute("CREATE TABLE {tn} ({cn} {ct} PRIMARY KEY)"
                                 .format(tn=table_name,
@@ -248,7 +248,7 @@ class DBSQLite3(Persistence.DBInterface):
 
         return tuple(pname_pid_list)
 
-    def package_tags(self, tag_pid_tuple, read_func):
+    def packageTags(self, tag_pid_tuple, read_func):
         """ Get current values params using read_func, then package as tuple of form:
             ( (parameter_id_1, parameter_value_1), ..., (parameter_id_n, parameter_value_n) )
 
@@ -260,7 +260,7 @@ class DBSQLite3(Persistence.DBInterface):
             pid_val_list.append((pid, read_func(tag)))  # new tuple (parameter_id, tag_value)
         return tuple(pid_val_list)
 
-    def drop_all_tables(self):
+    def dropAllTables(self):
         """ DANGER DANGER DANGER cleans entire database, there are no survivors. ]
         """
         tables = (self.group_id_table,

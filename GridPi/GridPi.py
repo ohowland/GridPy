@@ -28,7 +28,7 @@ if __name__ == '__main__':
     parser.read('asset_cfg.ini')
     asset_factory = Models.AssetFactory()  # Create Asset Factory object
     for cfg in parser.sections():
-        gp.add_asset(asset_factory.factory(parser[cfg]))
+        gp.addAsset(asset_factory.factory(parser[cfg]))
     del asset_factory
 
     # read process config.ini
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser.read('process_cfg.ini')
     process_factory = Process.ProcessFactory()
     for cfg in parser.sections():
-        gp.add_process(process_factory.factory(parser[cfg]))
+        gp.addProcess(process_factory.factory(parser[cfg]))
     del process_factory
 
     # read persistent storage config.ini
@@ -47,8 +47,8 @@ if __name__ == '__main__':
         db = persistence_factory.factory(parser[cfg])
     del persistence_factory
 
-    gp.register_tags() # System will register all Asset object parameters
-    gp.process.sort(gp)
+    gp.registerTags() # System will register all Asset object parameters
+    gp.process.sort()
 
     """ Initalize HMI object
     
@@ -61,20 +61,19 @@ if __name__ == '__main__':
     """
 
     loop = asyncio.get_event_loop()
-
     while(True):
         # Collect updateStatus() method references for each asset and package as coroutine task.
         update_asset_tasks = asyncio.gather(*[x.updateStatus() for x in gp.assets.values()])
         loop.run_until_complete(update_asset_tasks)
 
         # Push data from assets to the tagbus
-        gp.update_tagbus_from_assets()
+        gp.updateTagbusFromAssets()
 
         # Run process
-        gp.run_processes()
+        gp.runProcesses()
 
         # Push data from tagbus to assets
-        gp.write_assets_from_tagbus()
+        gp.writeAssetsFromTagbus()
 
         # Collect updateWrite() method references for each asset and package as coroutine task.
         write_asset_tasks = asyncio.gather(*[x.updateCtrl() for x in gp.assets.values()])
