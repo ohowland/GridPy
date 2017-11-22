@@ -1,28 +1,43 @@
 #!/usr/bin/env python3
 
 import logging
-from Processes import GraphProcess
+from Process import GraphProcess
 
+def isfloat(x):
+    try:
+        a = float(x)
+    except ValueError:
+        return False
+    else:
+        return True
+
+def isint(x):
+    try:
+        a = float(x)
+        b = int(a)
+    except ValueError:
+        return False
+    else:
+        return a == b
 
 class ProcessFactory(object):
     """Asset factor for the creating of Asset concrete objects
 
     """
-    def __init__(self, module_name):
+    def __init__(self):
+        self.module_name = self.__module__.split('.')[0]
 
-        self.module_name = module_name
-
-    def factory(self, config_dict):
+    def factory(self, configparser):
         """ Factory function for Asset Class objects
 
         :param config_dict: Configuration dictonary
         :return factory_class: Process Class decendent of type listed in config_dict
         """
-        class_type = config_dict['model_config']['class_name'] # TODO: Not sure I fully grasp the dynamic loading of classes
-        new_module = __import__(self.module_name)
-        new_pclass = getattr(new_module , 'Process')
-        new_class = getattr(new_pclass, class_type)
-        return new_class(config_dict)
+        class_type = configparser['class_name']
+        new_module = __import__(self.module_name + '.' + 'Process', fromlist=[type])
+        #new_pclass = getattr(new_module , 'Process')
+        new_class = getattr(new_module, class_type)
+        return new_class(configparser)
 
 class ProcessContainer(object):
     def __init__(self):
@@ -102,8 +117,12 @@ class ProcessInterface(object):
         return self._name
 
     def initProcess(self, config_dict):
-        for key, val in config_dict['model_config'].items():
+        for key, val in config_dict.items():
             if key in self.config.keys():
+                if isint(val):
+                    val = int(val)
+                elif isfloat(val):
+                    val = float(val)
                 self.config[key] = val
 
     def run(self, handle):
@@ -189,7 +208,6 @@ class INV_DMDLMT_PWR_CTRL(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s constructed', self.name)
 
     def do_work(self):
-
         if self._input['grid_kw'] < 0 and abs(self._input['grid_kw']) > self._config['grid_kw_export_limit']:
             self._output['inverter_kw_setpoint'] =  self._config['grid_kw_export_limit'] + self._input['grid_kw']
 

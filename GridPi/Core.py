@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import logging
-from Processes import Process
+from Process import Process
 
 
 class Tag(object):
@@ -66,7 +66,7 @@ class System(object):
     """System object holds all data that defines a a system process loop.
     :param self._assets: Asset objects that define physical objects in the power system
            self._modules: Dispatch process modules, either control and analytic, these modules manipulate tagbus data
-           self._tagbus: Assets register status and controls on the tagbus so that dispatch modules access and
+           self._tagbus: Models register status and controls on the tagbus so that dispatch modules access and
                          manipulate data in a controlled way.
     """
 

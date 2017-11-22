@@ -1,24 +1,40 @@
 #!/usr/bin/env python3
-import time
+
+def isfloat(x):
+    try:
+        a = float(x)
+    except ValueError:
+        return False
+    else:
+        return True
+
+def isint(x):
+    try:
+        a = float(x)
+        b = int(a)
+    except ValueError:
+        return False
+    else:
+        return a == b
 
 class AssetFactory(object):
     """Asset factor for the creating of Asset concrete objects
 
     """
-    def __init__(self, module_name):
+    def __init__(self):
+        self.module_name = self.__module__.split('.')[0]
+        pass
 
-        self.module_name = module_name
-
-    def factory(self, config_dict):
+    def factory(self, configparser):
         """ Factory function for Asset Class objects
 
         :param config_dict: Configuration dictonary
         :return factory_class: Asset Class decendent of type listed in config_dict
         """
-        class_type = config_dict['model_config']['class_name']
+        class_type = configparser['class_name']
         new_module = __import__(self.module_name + '.' + class_type, fromlist=[type])
         new_class = getattr(new_module, class_type)
-        return new_class(config_dict)
+        return new_class(configparser)
 
 class Asset(object):
     """Basic asset in power system.
@@ -61,8 +77,12 @@ class Asset(object):
         })
 
     def initModel(self, config_dict):
-        for key, val in config_dict['model_config'].items():
-            if key in self.config.keys():
+        for key, val in config_dict.items():
+            if key in self.config.keys(): # ConfigParser stores all data as string. Attempt to convert to float or int.
+                if isint(val):
+                    val = int(val)
+                elif isfloat(val):
+                    val = float(val)
                 self.config[key] = val
 
     def updateStatus(self):
@@ -133,13 +153,13 @@ class GridIntertie(CtrlAsset):
 
 
 class EnergyStorage(CtrlAsset):
-    """Energy Storage archetype object
+    """Energy Persistence archetype object
 
     """
     def __init__(self):
         super(EnergyStorage, self).__init__()
         self.status.update({
-            'soc': 0,
+            'soc': 0.0,
         })
         self.ctrl.update({
             'kw_setpoint': 0.0

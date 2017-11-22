@@ -3,14 +3,14 @@ import time
 import asyncio
 import random
 
-from Assets import StateMachine
-from Assets.Models import Feeder
+from Models import StateMachine
+from Models.Models import GridIntertie
 
 
-class VirtualFeeder(Feeder):
+class VirtualGridIntertie(GridIntertie):
 
     def __init__(self, config_dict):
-        super(VirtualFeeder, self).__init__()
+        super(VirtualGridIntertie, self).__init__()
 
         self.internal_status.update({
             'kw': 0.0,
@@ -23,7 +23,7 @@ class VirtualFeeder(Feeder):
             'open_breaker': False
         })
 
-        self.comm_interface = VFDevice()  # Configure the communications interface (virtual component)
+        self.comm_interface = VGIDevice()  # Configure the communications interface (virtual component)
         # self.internal_config.update({})
 
         self.initModel(config_dict)  # Write parameters in this model that match keys in the dictionary
@@ -57,7 +57,7 @@ class VirtualFeeder(Feeder):
         """ WRITE COMM INTERFACE """
         await self.comm_interface.write(self.internal_ctrl)
 
-class VFDevice(StateMachine.StateMachine):
+class VGIDevice(StateMachine.StateMachine):
     def __init__(self):
 
         # Keep the persistent information about the device here.
@@ -106,7 +106,7 @@ class Initialize(StateMachine.State):
     """ Startup state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualFeeder.StateMachine.State: Initialize')
+        logging.debug('VirtualGridIntertie.StateMachine.State: Initialize')
         sm_output = Output(dict())
 
         """ Set Initialization Boolean """
@@ -130,7 +130,7 @@ class BreakerTripped(StateMachine.State):
     """ Startup state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualFeeder.StateMachine.State: Tripped')
+        logging.debug('VirtualGridIntertie.StateMachine.State: Tripped')
         sm_output = Output(dict())
 
         """ Breaker Trip Booleans """
@@ -139,7 +139,7 @@ class BreakerTripped(StateMachine.State):
         """ Breaker kW Export """
         setattr(sm_output, 'kw', 0.0)
 
-        logging.debug('VirtualFeeder.StateMachine.State output: %s', sm_output.__dict__)
+        logging.debug('VirtualGridIntertie.StateMachine.State output: %s', sm_output.__dict__)
         return sm_output
 
     def next(self, sm_input):
@@ -152,7 +152,7 @@ class BreakerOpen(StateMachine.State):
     """ Offline state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualFeeder.StateMachine.State: BreakerOpen')
+        logging.debug('VirtualGridIntertie.StateMachine.State: BreakerOpen')
         sm_output = Output(dict())  # create output msg object
 
         """ Breaker Trip Booleans """
@@ -162,7 +162,7 @@ class BreakerOpen(StateMachine.State):
         """ Breaker kW Export """
         setattr(sm_output, 'kw', 0.0)
 
-        logging.debug('VirtualFeeder.StateMachine.State output: %s', sm_output.__dict__)
+        logging.debug('VirtualGridIntertie.StateMachine.State output: %s', sm_output.__dict__)
         return sm_output
 
     def next(self, sm_input):
@@ -177,7 +177,7 @@ class BreakerClosed(StateMachine.State):
     """ Online state for the VES
     """
     def run(self, sm_input):
-        logging.debug('VirtualFeeder.StateMachine.State: BreakerClosed')
+        logging.debug('VirtualGridIntertie.StateMachine.State: BreakerClosed')
         sm_output = Output(dict())  # create output msg object
 
         """ Breaker Trip Booleans """
@@ -186,7 +186,7 @@ class BreakerClosed(StateMachine.State):
         """ Breaker kW Export """
         setattr(sm_output, 'kw', 50.0)
 
-        logging.debug('VirtualFeeder.StateMachine.State output: %s', sm_output.__dict__)
+        logging.debug('VirtualGridIntertie.StateMachine.State output: %s', sm_output.__dict__)
         return sm_output
 
     def next(self, sm_input):
@@ -197,13 +197,13 @@ class BreakerClosed(StateMachine.State):
         return state_closed
 
 class Input(object):
-    """ Input messaging object for the Virtual Energy Storage State Machine
+    """ Input messaging object for the Virtual Energy Persistence State Machine
     """
     def __init__(self, sm_input):
         self.__dict__.update(sm_input)
 
 class Output(object):
-    """ Output messaging object for the Virtual Energy Storage State Machine
+    """ Output messaging object for the Virtual Energy Persistence State Machine
     """
     def __init__(self, outpt):
         self.__dict__.update(outpt)

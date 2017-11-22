@@ -3,9 +3,9 @@ import time
 import random
 import asyncio
 
-from Assets import StateMachine
+from Models import StateMachine
 
-from Assets.Models import EnergyStorage
+from Models.Models import EnergyStorage
 
 class VirtualEnergyStorage(EnergyStorage):
 
@@ -178,13 +178,13 @@ class Online(StateMachine.State):
         return state_online
 
 class Input(object):
-    """ Input messaging object for the Virtual Energy Storage State Machine
+    """ Input messaging object for the Virtual Energy Persistence State Machine
     """
     def __init__(self, sm_input):
         self.__dict__.update(sm_input)
 
 class Output(object):
-    """ Output messaging object for the Virtual Energy Storage State Machine
+    """ Output messaging object for the Virtual Energy Persistence State Machine
     """
     def __init__(self, outpt):
         self.__dict__.update(outpt)

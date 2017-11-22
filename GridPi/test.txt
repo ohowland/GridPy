@@ -1,6 +1,0 @@
-inv_get_status inv_calc_avail_cap
-inv_calc_avail_cap inv_pwr_ctrl_soc
-inv_calc_avail_cap inv_pwr_ctrl_demand_limiting
-inv_pwr_ctrl_soc inv_agg_ctrl
-inv_pwr_ctrl_demand_limiting inv_agg_ctrl
-inv_agg_ctrl inv_write_ctrl

@@ -1,4 +1,4 @@
-from Processes import Process
+from Process import Process
 import logging
 import sqlite3
 

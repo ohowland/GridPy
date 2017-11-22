@@ -1,61 +1,49 @@
 import unittest
 import logging
-import asyncio
-import time
-import sqlite3
 import random
 
 from GridPi import Core
-from Assets import Models
-from Storage import DBSQLite3
-
-import unittest
+from Models import Models
+from Persistence import Persistence
+from configparser import ConfigParser
 
 class TestStorageClass(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)  # configure logging
 
-        feeder_config = {
-            'model_config': {
-                "class_name": 'VirtualFeeder',
-                "name": 'feeder',
-                "cap_kw_pos_rated": 20,
-                "cap_kw_neg_rated": 20,
-            }
-        }
-        gridintertie_config = {
-            'model_config': {
-                "class_name": 'VirtualGridIntertie',
-                "name": 'grid',
-                "cap_kw_pos_rated": 30,
-                "cap_kw_neg_rated": 30,
-            }
-        }
-        energystorage_config = {
-            'model_config': {
-                "class_name": 'VirtualEnergyStorage',
-                "name": 'inverter',
-                "cap_kw_pos_rated": 20,
-                "cap_kw_neg_rated": 20,
-            }
-        }
-
-        asset_cfgs = (feeder_config,
-                      gridintertie_config,
-                      energystorage_config)  # a tuple containing asset configs
-
         self.gp = Core.System()
 
-        asset_factory = Models.AssetFactory('Assets')  # Create Asset Factory object
-        for cfg in asset_cfgs:
-            self.gp.add_asset(asset_factory.factory(cfg))
+        # configure asset models
+        parser = ConfigParser()
+        parser.read_dict({'FEEDER':
+                                   {'class_name': 'VirtualFeeder',
+                                    'name': 'feeder'},
+                               'ENERGY_STORAGE':
+                                   {'class_name': 'VirtualEnergyStorage',
+                                    'name': 'inverter'},
+                               'GRID_INTERTIE':
+                                   {'class_name': 'VirtualGridIntertie',
+                                    'name': 'grid'}})
+
+        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
+            self.gp.add_asset(asset_factory.factory(parser[cfg]))
         del asset_factory
+
+        # configure persistence model
+        parser.clear()
+        parser.read_dict({'PERSISTENCE':
+                              {'class_name': 'DBSQLite3',
+                               'local_path': '/database/GridPi.sqlite',
+                               'empty_database_on_start': 1}})
+        persistence_factory = Persistence.PersistenceFactory()
+        for cfg in parser.sections():
+            self.db = persistence_factory.factory(parser[cfg])
+        del persistence_factory
 
         self.gp.register_tags() # System will register all Asset object parameters
         self.gp.process.sort(self.gp)
-
-        self.db = DBSQLite3.DBSQLite3()
 
         asset_refs = [x for x in self.gp.assets.values()]
 

@@ -1,10 +1,8 @@
-from Storage import StorageInterface
+from Persistence import Persistence
 
 import sqlite3
 import logging
 from random import randint
-from pathlib import Path
-
 
 def sqlite_default_value(field_type):
     if field_type == 'INTEGER':
@@ -17,18 +15,13 @@ def sqlite_default_value(field_type):
         raise ValueError("field type '{ft}' not recognized".format(ft=field_type))
 
 
-class DBSQLite3(StorageInterface.DBInterface):
+class DBSQLite3(Persistence.DBInterface):
     """ SQLite3 DB interface for GridPi"""
-    def __init__(self):
-        super(DBSQLite3, self).__init__()
-
-        # define path the database
-        self.DB_Path = Path('tmp_db', 'tmp_db.sqlite')
-        self.DB_Dir = Path(self.DB_Path.stem)
-        self.DB_Dir.mkdir(exist_ok=True)
+    def __init__(self, config_dict):
+        super(DBSQLite3, self).__init__(config_dict)
 
         # get handle from sqlite3 class
-        self.conn = self.connect(self.DB_Path)
+        self.conn = self.connect(self.db_path)
         self.cursor = self.conn.cursor()
 
         # table names used in schema
@@ -50,7 +43,8 @@ class DBSQLite3(StorageInterface.DBInterface):
                            self.parameter_name_col: "TEXT",
                            self.parameter_value_col: "REAL"}
 
-        self.constructSchema()  # Drops all tables in the database, constructs a fresh Schema.
+        if config_dict['empty_database_on_start']:
+            self.constructSchema()  # Drops all tables in the database, constructs a fresh Schema.
 
     def __del__(self):
         self.conn.commit()

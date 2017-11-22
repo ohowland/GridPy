@@ -2,11 +2,12 @@
 
 import unittest
 import logging
+import asyncio
 
-from Assets import Models
+from Models import Models
 from GridPi import Core
-from Processes import Process
-
+from Process import Process
+from configparser import ConfigParser
 
 class TestProcessModule(unittest.TestCase):
 
@@ -14,106 +15,55 @@ class TestProcessModule(unittest.TestCase):
         "Setup for Process Module Testing"
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
-        """ Assets 
-        """
-        feeder_config = {
-            'model_config': {
-                "class_name": 'VirtualFeeder',
-                "name": 'feeder',
-                "cap_kw_pos_rated": 20,
-                "cap_kw_neg_rated": 20,
-                "cap_kvar_pos_rated": 20,
-                "cap_kvar_neg_rated": 20,
-            }
-        }
-        gridintertie_config = {
-            'model_config': {
-                "class_name": 'VirtualGridIntertie',
-                "name": 'grid',
-                "cap_kw_pos_rated": 30,
-                "cap_kw_neg_rated": 30,
-                "cap_kvar_pos_rated": 15,
-                "cap_kvar_neg_rated": 15,
-            }
-        }
-        energystorage_config = {
-            'model_config': {
-                "class_name": 'VirtualEnergyStorage',
-                "name": 'inverter',
-                "cap_kw_pos_rated": 20,
-                "cap_kw_neg_rated": 20,
-                "cap_kvar_pos_rated": 15,
-                "cap_kvar_neg_rated": 15,
-            }
-        }
+        self.test_system = Core.System()  # Create System container object
 
-        """ Processes
-        """
-        inv_upt_status_config = {
-            'model_config': {
-                "class_name": 'INV_UPT_STATUS',
-            }
-        }
-        grid_upt_status_config = {
-            'model_config': {
-                "class_name": 'GRID_UPT_STATUS',
-            }
-        }
-        inv_soc_pwr_ctrl_config = {
-            'model_config': {
-                "class_name": 'INV_SOC_PWR_CTRL',
-                "inverter_target_soc": 0.6
-            }
-        }
-        inv_dmdlmt_pwr_ctrl_config = {
-            'model_config': {
-                "class_name": 'INV_DMDLMT_PWR_CTRL',
-                "grid_kw_import_limit": 50,
-                "grid_kw_export_limit": 50
-            }
-        }
-        inv_wrt_ctrl_config = {
-            'model_config': {
-                "class_name": 'INV_WRT_CTRL'
-            }
-        }
+        # configure asset models
+        self.parser = ConfigParser()
+        self.parser.read_dict({'FEEDER':
+                                   {'class_name': 'VirtualFeeder',
+                                    'name': 'feeder'},
+                               'ENERGY_STORAGE':
+                                   {'class_name': 'VirtualEnergyStorage',
+                                    'name': 'inverter'},
+                               'GRID_INTERTIE':
+                                   {'class_name': 'VirtualGridIntertie',
+                                    'name': 'grid'}})
 
-        asset_cfgs = (feeder_config, # a tuple containing asset configs
-                      gridintertie_config,
-                      energystorage_config)
+        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
+            self.test_system.add_asset(asset_factory.factory(self.parser[cfg]))
+        del asset_factory
 
-
-        process_cfgs = (inv_upt_status_config, # a tuple containing process configs
-                        grid_upt_status_config,
-                        inv_soc_pwr_ctrl_config,
-                        inv_dmdlmt_pwr_ctrl_config,
-                        inv_wrt_ctrl_config)
-
-        self.test_system = Core.System()       # Create System container object
-
-        asset_factory = Models.AssetFactory('Assets')  # Create Asset Factory object
-        for cfg in asset_cfgs:  # Add Assets to System, The asset factory acts on a configuration
-            self.test_system.add_asset(asset_factory.factory(cfg))
-
-        process_factory = Process.ProcessFactory('Processes')
-        for cfg in process_cfgs:
-            self.test_system.add_process(process_factory.factory(cfg))
-
+        # configure processes
+        self.parser.clear()
+        self.parser.read_dict({'process_1': {'class_name': 'INV_UPT_STATUS'},
+                               'process_2': {'class_name': 'GRID_UPT_STATUS'},
+                               'process_3': {'class_name': 'INV_SOC_PWR_CTRL',
+                                             'inverter_target_soc': 0.6},
+                               'process_4': {'class_name': 'INV_DMDLMT_PWR_CTRL',
+                                             'grid_kw_import_limit': 20,
+                                             'grid_kw_export_limit': 20},
+                               'process_5': {'class_name': 'INV_WRT_CTRL'}})
+        process_factory = Process.ProcessFactory()
+        for cfg in self.parser.sections():
+            self.test_system.add_process(process_factory.factory(self.parser[cfg]))
+        del process_factory
 
         self.test_system.register_tags()  # System will register all Asset object parameters with key 'status_*' as a
                                           # tag in system.Tagbus object.
 
+        # Get an asyncio event loop so that we can run updateStatus() and updateCtrl() on assets.
+        self.loop = asyncio.get_event_loop()
+
     def test_process_factory(self):
+        logging.debug('********** Test Process: test_process_factory **********')
 
-        test_class_cfg = inv_soc_pwr_ctrl_config = {
-            'model_config': {
-                "class_name": 'INV_SOC_PWR_CTRL',
-                "inverter_target_soc": 0.6
-            }
-        }
+        self.parser.clear()
+        self.parser.read_dict({'test_process': {'class_name': 'INV_SOC_PWR_CTRL',
+                                                'inverter_target_soc': 0.6}})
 
-        PF = Process.ProcessFactory('Processes')
-        test_class = PF.factory(test_class_cfg)
+        PF = Process.ProcessFactory()
+        test_class = PF.factory(self.parser['test_process'])
 
         self.assertIsInstance(test_class, Process.INV_SOC_PWR_CTRL)
         self.assertEqual(test_class.config['inverter_target_soc'], 0.6)
@@ -122,20 +72,18 @@ class TestProcessModule(unittest.TestCase):
         ''' Test the tag aggregation class.
 
         '''
+        logging.debug('********** Test Process: test_tag_aggregation **********')
         tag = 'inverter_kw_setpoint'
 
         inv_soc_pwr_ctrl_config = {
-            'model_config': {
-                "class_name": 'INV_SOC_PWR_CTRL',
-                "inverter_target_soc": 0.6
-            }
+            "class_name": 'INV_SOC_PWR_CTRL',
+            "inverter_target_soc": 0.6
         }
+
         inv_dmdlmt_pwr_ctrl_config = {
-            'model_config': {
-                "class_name": 'INV_SOC_PWR_CTRL',
-                "grid_kw_import_limit": 50,
-                "grid_kw_export_limit": 50
-            }
+            "class_name": 'INV_DMDLMT_PWR_CTRL',
+            "grid_kw_import_limit": 50,
+            "grid_kw_export_limit": 50
         }
 
         inv_soc_pwr_ctrl = Process.INV_SOC_PWR_CTRL(inv_soc_pwr_ctrl_config)
@@ -152,17 +100,28 @@ class TestProcessModule(unittest.TestCase):
         #self.assertEqual(final, 75)
 
     def test_graph_dependencies(self):
+        logging.debug('********** Test Process: test_graph_dependencies **********')
 
         self.test_system.process.sort(self.test_system)
 
     def test_process(self):
+        logging.debug('********** Test Process: test_process **********')
+        """ To test if data can be brought onto the tagbus from an asset, processed, and written back to the asset
+        """
+
+        # run updateStatus() twice. virtual components first update is an initializion state, then they begin to report.
+        for x in range(2):
+            tasks = asyncio.gather(*[x.updateStatus() for x in self.test_system.assets.values()])
+            self.loop.run_until_complete(tasks)
 
         self.test_system.update_tagbus_from_assets()
         self.test_system.run_processes()
         self.test_system.write_assets_from_tagbus()
 
-        self.assertGreater(self.test_system.read('inverter_soc'), 0.0)
+        tasks = asyncio.gather(*[x.updateCtrl() for x in self.test_system.assets.values()])
+        self.loop.run_until_complete(tasks)
 
+        self.assertGreater(self.test_system.read('inverter_soc'), 0.0)
 
 if __name__ == '__main__':
     unittest.main()
