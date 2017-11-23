@@ -108,7 +108,7 @@ class System(object):
         self._assets.append(asset)
 
     def addProcess(self, new_process):
-        self._process.add_process(new_process)
+        self._process.addProcess(new_process)
 
     def addTagbus(self, tagbus):
         self._tagbus = tagbus

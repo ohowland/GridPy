@@ -43,6 +43,9 @@ class ProcessContainer(object):
     def __init__(self):
         self._process_list = list()
         self._process_dict = dict()
+        self._asset_name_map = {'inverter': 'inverter',
+                                 'gridintertie': 'grid',
+                                 'feeder': 'feeder'}
         self._ready = False
 
     @property
@@ -57,7 +60,19 @@ class ProcessContainer(object):
     def ready(self):
         return self._ready
 
-    def add_process(self, new_process):
+    def changeAssetNames(self, new_asset_names_dict):
+        """ the internal parameter l_asset_name_dict' maps a standard asset names used in the processes module
+        to an actual asset name used on the tagbus.
+
+        @param: new_asset_names_dict is a dictonary of {'standard asset name': 'actual asset name'}
+        """
+        for key, val in new_asset_names_dict.items():
+            if self._asset_name_map.get(key, 0):
+                self._asset_name_map['key'] = val
+            else:
+                logging.warning('PROCESS CONTAINER: changeAssetNames(): asset name {n} does not exist'.format(n=key))
+
+    def addProcess(self, new_process):
         """ Add process to container
 
         """
@@ -90,7 +105,7 @@ class ProcessContainer(object):
             for process in self._process_list:
                 process.run(handle)
         else:
-            print('Process Module not Ready')
+            print('Process module not ready, please run self.sort()')
 
 
 class ProcessInterface(object):
@@ -174,21 +189,32 @@ class AggregateProcess(ProcessInterface):
 
 class INV_SOC_PWR_CTRL(SingleProcess):
     def __init__(self, config_dict):
-        super(INV_SOC_PWR_CTRL, self).__init__()
 
-        self._name = 'inverter soc power controller'
-        self._input.update({'inverter_soc': 0})
-        self._config.update({'inverter_target_soc': 0})
-        self._output.update({'inverter_kw_setpoint': None})
+        try:
+            self.inverter = config_dict['target_inverter']
+        except KeyError:
+            self.inverter = 'inverter'
+            logging.warning('PROCESS: INV_SOC_PWR_CTRL: target_inverter not set, defaulting to "inverter"')
+
+        self.inverter_soc = self.inverter + '_soc'
+        self.inverter_target_soc = self.inverter + '_target_soc'
+        self.inverter_kw_setpoint = self.inverter + '_kw_setpoint'
+
+        super(INV_SOC_PWR_CTRL, self).__init__()
+        self._name = self.inverter + ' soc power controller'
+        self._input.update({self.inverter_soc: 0})
+        self._config.update({self.inverter_target_soc: 0})
+        self._output.update({self.inverter_kw_setpoint: None})
 
         self.initProcess(config_dict)
         logging.debug('PROCESS INTERFACE: %s constructed', self.name)
 
+
     def do_work(self):
-        if self._input['inverter_soc'] < self.config['inverter_target_soc']:
-            self._output['inverter_kw_setpoint'] = -50
-        elif self._input['inverter_soc'] > self.config['inverter_target_soc']:
-            self._output['inverter_kw_setpoint'] = 50
+        if self._input[self.inverter_soc] < self.config[self.inverter_target_soc]:
+            self._output[ self.inverter_kw_setpoint] = -50
+        elif self._input[self.inverter_soc] > self.config[self.inverter_target_soc]:
+            self._output[ self.inverter_kw_setpoint] = 50
 
     def __del__(self):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
@@ -198,24 +224,42 @@ class INV_DMDLMT_PWR_CTRL(SingleProcess):
     def __init__(self, config_dict):
         super(INV_DMDLMT_PWR_CTRL, self).__init__()
 
-        self._name = 'inverter demand limiting power controller'
-        self._input.update({'grid_kw': 0})
-        self._config.update({'grid_kw_export_limit': 0,
-                            'grid_kw_import_limit': 0})
-        self._output.update({'inverter_kw_setpoint': None})
+        try:
+            self.inverter = config_dict['target_inverter']
+        except KeyError:
+            self.inverter = 'inverter'
+            logging.warning('PROCESS: INV_DMDLMT_PWR_CTRL: target_inverter not set, defaulting to "inverter"')
+        try:
+            self.grid = config_dict['target_grid_intertie']
+        except KeyError:
+            self.grid = 'grid'
+            logging.warning('PROCESS: INV_DMDLMT_PWR_CTRL: target_grid_interconnect not set, defaulting to "grid"')
+
+        self.grid_kw = self.grid + '_kw'
+        self.grid_kw_export_limit = self.grid + '_kw_export_limit'
+        self.grid_kw_import_limit = self.grid + '_kw_export_limit'
+        self.inverter_kw_setpoint = self.inverter + '_kw_setpoint'
+
+        self._name = self.inverter + ' demand limiting power controller'
+        self._input.update({self.grid_kw: 0})
+        self._config.update({self.grid_kw_export_limit: 0,
+                             self.grid_kw_import_limit: 0})
+        self._output.update({self.inverter_kw_setpoint: None})
 
         self.initProcess(config_dict)
         logging.debug('PROCESS INTERFACE: %s constructed', self.name)
 
     def do_work(self):
-        if self._input['grid_kw'] < 0 and abs(self._input['grid_kw']) > self._config['grid_kw_export_limit']:
-            self._output['inverter_kw_setpoint'] =  self._config['grid_kw_export_limit'] + self._input['grid_kw']
 
-        elif self._input['grid_kw'] > self._config['grid_kw_import_limit']:
-            self._output['inverter_kw_setpoint'] = self._input['grid_kw'] - self._config['grid_kw_import_limit']
+        if self._input[self.grid_kw] < 0 and abs(self._input[self.grid_kw]) > self._config[self.grid_kw_export_limit]:
+            self._output[self.inverter_kw_setpoint] =  self._config[self.grid_kw_export_limit] \
+                                                       + self._input[self.grid_kw]
 
+        elif self._input[self.grid_kw] > self._config[self.grid_kw_import_limit]:
+            self._output[self.inverter_kw_setpoint] = self._input[self.grid_kw] \
+                                                      - self._config[self.grid_kw_import_limit]
         else:
-            self._output['inverter_kw_setpoint'] = 0
+            self._output[self.inverter_kw_setpoint] = 0
 
     def __del__(self):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
@@ -224,12 +268,17 @@ class INV_DMDLMT_PWR_CTRL(SingleProcess):
 class INV_UPT_STATUS(SingleProcessProxy):
     def __init__(self, config_dict):
         super(INV_UPT_STATUS, self).__init__()
+        try:
+            self.inverter = config_dict['target_inverter']
+        except KeyError:
+            self.inverter = 'inverter'
+            logging.warning('PROCESS: INV_UPT_STATUS: target_inverter not set, defaulting to "inverter"')
 
-        self._name = 'inverter update status'
+        self._name = self.inverter+' update status'
         self._input = dict()   # No input, acts as root nodes
         self._config.update({'asset_ref': None})  # TODO: asset_ref in update status process, or use asset directly?
-        self._output.update({'inverter_soc': None,
-                            'inverter_kw': None})
+        self._output.update({self.inverter+'_soc': None,
+                             self.inverter+'_kw': None})
 
         self.initProcess(config_dict)
         logging.debug('PROCESS MODULE: %s constructed', self.name)
@@ -247,8 +296,14 @@ class INV_WRT_CTRL(SingleProcessProxy):
     def __init__(self, config_dict):
         super(INV_WRT_CTRL, self).__init__()
 
-        self._name = 'inverter write control'
-        self._input.update({'inverter_kw_setpoint': 0})
+        try:
+            self.inverter = config_dict['target_inverter']
+        except KeyError:
+            self.inverter = 'inverter'
+            logging.warning('PROCESS: INV_WRT_CTRL: target_inverter not set, defaulting to "inverter"')
+
+        self._name = self.inverter + 'write control'
+        self._input.update({self.inverter + '_kw_setpoint': 0})
         self._config.update({'asset_ref': None})
         self._output = dict()
 
@@ -269,17 +324,22 @@ class GRID_UPT_STATUS(SingleProcessProxy):
     def __init__(self, config_dict):
         super(GRID_UPT_STATUS, self).__init__()
 
-        self._name = 'grid update status'
+        try:
+            self.grid = config_dict['target_grid_intertie']
+        except KeyError:
+            self.grid = 'grid'
+            logging.warning('PROCESS: INV_DMDLMT_PWR_CTRL: target_grid_interconnect not set, defaulting to "grid"')
+
+        self._name = self.grid+'update status'
         self._input = dict()  # Empty input, acts as root node
         self._config.update({'asset_ref': None})
-        self._output.update({'grid_kw': None})
+        self._output.update({self.grid+'_kw': None})
 
         self.initProcess(config_dict)
         logging.debug('PROCESS INTERFACE: %s constructed', self.name)
 
     def do_work(self):
         pass
-        # self._output['grid_kw'] = 100
 
     def __del__(self):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)

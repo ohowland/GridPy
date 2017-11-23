@@ -23,37 +23,37 @@ class Application(tk.Frame):
         self.tree.heading("val", text="Tag Value")
         self.tree.heading("units", text="Units")
 
-        for asset_name in system.assets.keys():
-            self.tree.insert("", 1, asset_name, text=asset_name)
-            self.tree.insert(asset_name, 1, asset_name + '_status', text='status')
-            self.tree.insert(asset_name, 1, asset_name + '_ctrl', text='control')
-            self.tree.insert(asset_name, 1, asset_name + '_config', text='configuration')
+        for asset in system.assets:
+            self.tree.insert("", 1, asset.config['name'], text=asset.config['name'])
+            self.tree.insert(asset.config['name'], 1, asset.config['name'] + '_status', text='status')
+            self.tree.insert(asset.config['name'], 1, asset.config['name'] + '_ctrl', text='control')
+            self.tree.insert(asset.config['name'], 1, asset.config['name'] + '_config', text='configuration')
 
-            for tag in system.assets[asset_name].status.keys():
-                tag_category = asset_name + '_status'
-                self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
+            for tag in asset.status.keys():
+                tag_category = asset.config['name'] + '_status'
+                self.tree.insert(tag_category, 0, asset.config['name'] + '_' + tag, text=tag, value=["0"])
 
-            for tag in system.assets[asset_name].ctrl.keys():
-                tag_category = asset_name + '_ctrl'
-                self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
+            for tag in asset.ctrl.keys():
+                tag_category = asset.config['name'] + '_ctrl'
+                self.tree.insert(tag_category, 0, asset.config['name'] + '_' + tag, text=tag, value=["0"])
 
-            for tag in system.assets[asset_name].config.keys():
-                tag_category = asset_name + '_config'
-                self.tree.insert(tag_category, 0, asset_name + '_' + tag, text=tag, value=["0"])
+            for tag in asset.config.keys():
+                tag_category = asset.config['name'] + '_config'
+                self.tree.insert(tag_category, 0, asset.config['name'] + '_' + tag, text=tag, value=["0"])
 
         self.tree.pack(side="top")
 
     def update_tree(self, system):
 
-        for asset_name in system.assets.keys():
-            for tag in system.assets[asset_name].status.keys():
-                tag_val = system.read(asset_name + '_' + tag)
-                self.tree.set(asset_name + '_' + tag, 'val', tag_val)
+        for asset in system.assets:
+            for tag in asset.status.keys():
+                tag_val = system.read(asset.config['name'] + '_' + tag)
+                self.tree.set(asset.config['name'] + '_' + tag, 'val', tag_val)
 
-            for tag in system.assets[asset_name].ctrl.keys():
-                tag_val = system.read(asset_name + '_' + tag)
-                self.tree.set(asset_name + '_' + tag, 'val', tag_val)
+            for tag in asset.ctrl.keys():
+                tag_val = system.read(asset.config['name'] + '_' + tag)
+                self.tree.set(asset.config['name'] + '_' + tag, 'val', tag_val)
 
-            for tag in system.assets[asset_name].config.keys():
-                tag_val = system.read(asset_name + '_' + tag)
-                self.tree.set(asset_name + '_' + tag, 'val', tag_val)
+            for tag in asset.config.keys():
+                tag_val = system.read(asset.config['name'] + '_' + tag)
+                self.tree.set(asset.config['name'] + '_' + tag, 'val', tag_val)

@@ -10,8 +10,6 @@ from GridPi import Core
 from Process import Process
 from Process import GraphProcess
 
-
-
 class TestProcessModule(unittest.TestCase):
     def setUp(self):
         "Setup for Process Module Testing"
@@ -79,13 +77,16 @@ class TestProcessModule(unittest.TestCase):
 
         inv_soc_pwr_ctrl_config = {
             "class_name": 'INV_SOC_PWR_CTRL',
-            "inverter_target_soc": 0.5
+            "inverter_target_soc": 0.5,
+            "target_inveter": 'inverter'
         }
 
         inv_dmdlmt_pwr_ctrl_config = {
             "class_name": 'INV_DMDLMT_PWR_CTRL',
             "grid_kw_import_limit": 10,
-            "grid_kw_export_limit": 10
+            "grid_kw_export_limit": 10,
+            "target_inverter": 'inverter',
+            "target_grid_intertie": 'grid'
         }
 
         inv_soc_pwr_ctrl = Process.INV_SOC_PWR_CTRL(inv_soc_pwr_ctrl_config)
