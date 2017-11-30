@@ -44,6 +44,8 @@ class Application(tk.Frame):
         self.tree.pack(side="top")
 
     def update_tree(self, system):
+        self.root.update_idletasks()
+        self.root.update()
 
         for asset in system.assets:
             for tag in asset.status.keys():
