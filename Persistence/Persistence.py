@@ -26,8 +26,7 @@ class DBInterface(object):
         self.db_dir = Path(self.db_path.parent)
         self.db_dir.mkdir(exist_ok=True)
 
-
-    def connect(self, db_path):
+    def connect(self):
         pass
 
     def disconnect(self):

@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+  <ul class=entries>
+  {% for assets in entries %}
+    <li><h2>{{assets[0].object_name }} Status</h2>
+    {% for asset in assets %}
+    <li>{{ asset.parameter_name }}: {{ asset.parameter_value }}
+    {% endfor %}
+  {% else %}
+    <li><em>Unbelievable. No entries here so far</em>
+  {% endfor %}
+  </ul>
+{% endblock %}
+

@@ -4,7 +4,6 @@ import Core
 from Models import Models
 from Process import Process
 from Persistence import Persistence
-import HMI
 from datetime import datetime
 
 import logging
@@ -40,37 +39,47 @@ async def update_assets_loop(system, poll_rate):
             break
 
 
-async def update_hmi(system, poll_rate):
-    hmi = HMI.Application(system)  # Create HMI object
-    while True:
-        try:
-            hmi.update_tree(system)
-            await asyncio.sleep(poll_rate)
-        except:
-            asyncio.get_event_loop().stop()
-            break
-
-
 async def update_persistent_storage(system, database, poll_rate):
 
-    pkg_list = list()
+    status_pkg_list = list()
+    ctrl_pkg_list = list()
     for asset in system.assets:
-        params = [p for p in asset.status.keys()]         # Get all params associated with asset
-        database.addGroup(asset.config['name'], *params)  # Add asset and params to relevent db tables
+        database.connect()
+        group_id = database.addGroup(asset.config['name'])  # Add asset and params to relevent db tables
 
-        param_info = database.get_pid_names(asset.config['name'])  # Retrieve all parameter IDs for params
-        tag_pid_list = list()
-        for name, id in param_info:
+        params = [p for p in asset.status.keys()]  # Get all params associated with asset
+        database.add_params_to_group(group_id, 'status', *params)
+
+        params = [p for p in asset.ctrl.keys()]  # Get all params associated with asset
+        database.add_params_to_group(group_id, 'control', *params)
+
+        param_status_info = database.get_pid_names(asset.config['name'], 'status')  # Retrieve all parameter IDs for params
+        param_ctrl_info = database.get_pid_names(asset.config['name'], 'control')
+        database.disconnect()
+
+        status_tag_pid_list = list()
+        for name, id in param_status_info:
             tag_name = ''.join(asset.config['name'] + '_' + name)
-            tag_pid_list.append((tag_name, id))
+            status_tag_pid_list.append((tag_name, id))
 
-        pkg_list.append(tuple(tag_pid_list))
+        status_pkg_list.append(tuple(status_tag_pid_list))
+
+
+        ctrl_tag_pid_list = list()
+        for name, id in param_ctrl_info:
+            tag_name = ''.join(asset.config['name'] + '_' + name)
+            ctrl_tag_pid_list.append((tag_name, id))
+
+        ctrl_pkg_list.append(tuple(ctrl_tag_pid_list))
 
     while True:
-        print('[{time}] writing database'.format(time=datetime.now().time()))
-        for tag_set in pkg_list:
+        print('[{time}] connecting to database'.format(time=datetime.now().time()))
+        database.connect()
+        for tag_set in status_pkg_list:
             pkg = database.packageTags(tag_set, system.read)
             database.writeParam(payload=pkg)
+        print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
+        database.disconnect()
         await asyncio.sleep(poll_rate)
 
 
@@ -118,7 +127,6 @@ if __name__ == '__main__':
 
     loop = asyncio.get_event_loop()  # Get event loop
     loop.create_task(update_assets_loop(gp, poll_rate=.1))
-    loop.create_task(update_hmi(gp, .2))
     loop.create_task(update_persistent_storage(gp, db, 5))
 
     try:
