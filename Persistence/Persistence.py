@@ -20,11 +20,8 @@ class PersistenceFactory(object):
 
 
 class DBInterface(object):
-    def __init__(self, config_dict):
-
-        self.db_path = Path(*config_dict['local_path'].split('/'))
-        self.db_dir = Path(self.db_path.parent)
-        self.db_dir.mkdir(exist_ok=True)
+    def __init__(self, configparser):
+        pass
 
     def connect(self):
         pass

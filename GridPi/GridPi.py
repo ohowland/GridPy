@@ -41,45 +41,63 @@ async def update_assets_loop(system, poll_rate):
 
 async def update_persistent_storage(system, database, poll_rate):
 
-    status_pkg_list = list()
-    ctrl_pkg_list = list()
+    tag_list = list()
     for asset in system.assets:
-        database.connect()
-        group_id = database.addGroup(asset.config['name'])  # Add asset and params to relevent db tables
+        #database.connect()
+        #group_id = database.addGroup(asset.config['name'])  # Add asset and params to relevent db tables
 
-        params = [p for p in asset.status.keys()]  # Get all params associated with asset
-        database.add_params_to_group(group_id, 'status', *params)
+        database.add_asset(asset.config['name'])
 
-        params = [p for p in asset.ctrl.keys()]  # Get all params associated with asset
-        database.add_params_to_group(group_id, 'control', *params)
+        database.add_asset_params(asset.config['name'], 0, *list(asset.status.keys()))
+        database.add_asset_params(asset.config['name'], 1, *list(asset.ctrl.keys()))
 
-        param_status_info = database.get_pid_names(asset.config['name'], 'status')  # Retrieve all parameter IDs for params
-        param_ctrl_info = database.get_pid_names(asset.config['name'], 'control')
-        database.disconnect()
+        #params = [p for p in asset.status.keys()]  # Get all params associated with asset
+        #database.add_params_to_group(group_id, 'status', *params)
+        #params = [p for p in asset.ctrl.keys()]  # Get all params associated with asset
+        #database.add_params_to_group(group_id, 'control', *params)
 
-        status_tag_pid_list = list()
-        for name, id in param_status_info:
-            tag_name = ''.join(asset.config['name'] + '_' + name)
-            status_tag_pid_list.append((tag_name, id))
+        #param_status_info = database.get_pid_names(asset.config['name'], 'status')  # Retrieve all parameter IDs for params
+        #param_ctrl_info = database.get_pid_names(asset.config['name'], 'control')
+        #database.disconnect()
 
-        status_pkg_list.append(tuple(status_tag_pid_list))
+        #status_tag_pid_list = list()
+        #for name, id in param_status_info:
+        #    tag_name = ''.join(asset.config['name'] + '_' + name)
+        #    status_tag_pid_list.append((tag_name, id))
+
+        #status_pkg_list.append(tuple(status_tag_pid_list))
 
 
-        ctrl_tag_pid_list = list()
-        for name, id in param_ctrl_info:
-            tag_name = ''.join(asset.config['name'] + '_' + name)
-            ctrl_tag_pid_list.append((tag_name, id))
+        #ctrl_tag_pid_list = list()
+        #for name, id in param_ctrl_info:
+        #    tag_name = ''.join(asset.config['name'] + '_' + name)
+        #    ctrl_tag_pid_list.append((tag_name, id))
 
-        ctrl_pkg_list.append(tuple(ctrl_tag_pid_list))
+        #ctrl_pkg_list.append(tuple(ctrl_tag_pid_list))
+
+        # TAG NAMES are of the form: asset_param
+        status_tags = [asset.config['name'] + '_' + name for name in asset.status.keys()]
+        ctrl_tags = [asset.config['name'] + '_' + name for name in asset.ctrl.keys()]
+
+        tag_list += (status_tags)
+        tag_list += (ctrl_tags)
 
     while True:
         print('[{time}] connecting to database'.format(time=datetime.now().time()))
-        database.connect()
-        for tag_set in status_pkg_list:
-            pkg = database.packageTags(tag_set, system.read)
-            database.writeParam(payload=pkg)
+
+        # TODO: this is inefficient, there is a better way to prepare the pkg tags.
+        pkg = dict()
+        for tag in tag_list:
+            tagparts = tag.split('_')
+            try:
+                pkg[tagparts[0]].update({'_'.join(tagparts[1:]): system.read(tag)})
+            except KeyError:
+                pkg.update({tagparts[0]: {'_'.join(tagparts[1:]): system.read(tag)}})
+
+            print(tag, system.read(tag))
+
+        database.write_param(payload=pkg)
         print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
-        database.disconnect()
         await asyncio.sleep(poll_rate)
 
 

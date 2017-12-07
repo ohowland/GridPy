@@ -8,7 +8,7 @@ app.config.from_object(__name__) # load config from this file, flaskr.py
 
 # Load default config and override config from an environment variable
 app.config.update(dict(
-    DATABASE=(Path.cwd().parent / Path('GridPi/database/GridPi.sqlite')).as_posix(),
+    DATABASE=(Path.cwd().parent / Path('GridPi/GridPi.sqlite')).as_posix(),
     SECRET_KEY='development key',
     USERNAME='admin',
     PASSWORD='default'
@@ -18,18 +18,14 @@ app.config.update(dict(
 def show_entries():
     db = get_db()
     entries = []
-    cur = db.execute("SELECT * from object_identity_table")
+    cur = db.execute("SELECT * from asset_identity_table")
     assets = cur.fetchall()
     for id, _ in assets:
-        cur = db.execute("SELECT object_name, parameter_name, parameter_value FROM {tn1} "
-                         "INNER JOIN {tn2} on {tn2}.parameter_id = {tn1}.parameter_id "
-                         "INNER JOIN {tn3} on {tn3}.parameter_id = {tn1}.parameter_id "
-                         "INNER JOIN {tn4} on {tn4}.object_id = {tn3}.object_id "
-                         "WHERE {tn4}.object_id = {oid} AND {tn2}.parameter_type = 'status'"\
-                         .format(tn1='parameter_value_table',
-                                 tn2='parameter_identity_table',
-                                 tn3='parameter_ownership_table',
-                                 tn4='object_identity_table',
+        cur = db.execute("SELECT asset_name, param_name, param_value FROM {tn1} "
+                         "INNER JOIN {tn2} on {tn2}.asset_id = {tn1}.asset_id "
+                         "WHERE {tn2}.asset_id = {oid} AND {tn1}.param_access = 0"\
+                         .format(tn1='parameter_identity_table',
+                                 tn2='asset_identity_table',
                                  oid=id))
         entries.append(cur.fetchall())
     print(entries)
@@ -39,18 +35,14 @@ def show_entries():
 def show_control():
     db = get_db()
     entries = []
-    cur = db.execute("SELECT * from object_identity_table")
+    cur = db.execute("SELECT * from asset_identity_table")
     assets = cur.fetchall()
     for id, _ in assets:
-        cur = db.execute("SELECT object_name, parameter_name, parameter_value, {tn1}.parameter_id FROM {tn1} "
-                         "INNER JOIN {tn2} on {tn2}.parameter_id = {tn1}.parameter_id "
-                         "INNER JOIN {tn3} on {tn3}.parameter_id = {tn1}.parameter_id "
-                         "INNER JOIN {tn4} on {tn4}.object_id = {tn3}.object_id "
-                         "WHERE {tn4}.object_id = {oid} AND {tn2}.parameter_type = 'control'"\
-                         .format(tn1='parameter_value_table',
-                                 tn2='parameter_identity_table',
-                                 tn3='parameter_ownership_table',
-                                 tn4='object_identity_table',
+        cur = db.execute("SELECT asset_name, param_name, param_value, {tn1}.param_id FROM {tn1} "
+                         "INNER JOIN {tn2} on {tn2}.asset_id = {tn1}.asset_id "
+                         "WHERE {tn2}.asset_id = {oid} AND {tn1}.param_access = 1"\
+                         .format(tn1='parameter_identity_table',
+                                 tn2='asset_identity_table',
                                  oid=id))
         entries.append(cur.fetchall())
     print(entries)
@@ -83,7 +75,7 @@ def add_entry():
     db = get_db()
 
     print(request.form['pid'], request.form['value'])
-    db.execute('UPDATE parameter_value_table SET parameter_value=(?) WHERE parameter_id=(?)',
+    db.execute('UPDATE parameter_identity_table SET param_value=(?) WHERE param_id=(?)',
                (request.form['value'], request.form['pid']))
     db.commit()
     flash('New entry was successfully posted')

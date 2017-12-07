@@ -2,6 +2,7 @@ from Persistence import Persistence
 
 import sqlite3
 import logging
+from pathlib import Path
 from random import randint
 
 def sqlite_default_value(field_type):
@@ -17,8 +18,12 @@ def sqlite_default_value(field_type):
 
 class DBSQLite3(Persistence.DBInterface):
     """ SQLite3 DB interface for GridPi"""
-    def __init__(self, config_dict):
-        super(DBSQLite3, self).__init__(config_dict)
+    def __init__(self, config):
+        super(DBSQLite3, self).__init__()
+
+        self.db_path = Path(*config['local_path'].split('/'))
+        self.db_dir = Path(self.db_path.parent)
+        self.db_dir.mkdir(exist_ok=True)
 
         # get handle from sqlite3 class
         self.cursor = None

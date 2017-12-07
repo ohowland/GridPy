@@ -2,14 +2,14 @@
 {% block body %}
   <ul class=entries>
   {% for assets in entries %}
-    <li><h2>{{assets[0].object_name }} Control</h2>
+    <li><h2>{{assets[0].asset_name }} Control</h2>
     {% for asset in assets %}
       <form action="{{ url_for('add_entry') }}" method=post class=add-entry>
-        <dt>{{ asset.parameter_name }}</dt>
-        PID:{{ asset.parameter_id }};
-        Current Value: {{ asset.parameter_value }}
+        <dt>{{ asset.param_name }}</dt>
+        PID:{{ asset.param_id }};
+        Current Value: {{ asset.param_value }}
         <dt><input type=number size=30 name=value>
-            <input type=number name=pid value={{ asset.parameter_id }} hidden>
+            <input type=number name=pid value={{ asset.param_id }} hidden>
             <input type=submit value=set>
        </dt>
 	  </form>
