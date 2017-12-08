@@ -94,8 +94,6 @@ async def update_persistent_storage(system, database, poll_rate):
             except KeyError:
                 pkg.update({tagparts[0]: {'_'.join(tagparts[1:]): system.read(tag)}})
 
-            print(tag, system.read(tag))
-
         database.write_param(payload=pkg)
         print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
         await asyncio.sleep(poll_rate)
