@@ -34,70 +34,52 @@ async def update_assets_loop(system, poll_rate):
 
             await asyncio.sleep(poll_rate)
 
-        except KeyboardInterrupt:
+        except:
+            pending = asyncio.Task.all_tasks()
+            for task in pending:
+                task.cancel()
             asyncio.get_event_loop().stop()
             break
 
 
 async def update_persistent_storage(system, database, poll_rate):
 
-    tag_list = list()
+    status_payload = dict()
+    ctrl_payload = dict()
+
     for asset in system.assets:
-        #database.connect()
-        #group_id = database.addGroup(asset.config['name'])  # Add asset and params to relevent db tables
-
         database.add_asset(asset.config['name'])
-
         database.add_asset_params(asset.config['name'], 0, *list(asset.status.keys()))
         database.add_asset_params(asset.config['name'], 1, *list(asset.ctrl.keys()))
 
-        #params = [p for p in asset.status.keys()]  # Get all params associated with asset
-        #database.add_params_to_group(group_id, 'status', *params)
-        #params = [p for p in asset.ctrl.keys()]  # Get all params associated with asset
-        #database.add_params_to_group(group_id, 'control', *params)
+        status_payload.update({asset.config['name']: dict()})
+        ctrl_payload.update({asset.config['name']: dict()})
 
-        #param_status_info = database.get_pid_names(asset.config['name'], 'status')  # Retrieve all parameter IDs for params
-        #param_ctrl_info = database.get_pid_names(asset.config['name'], 'control')
-        #database.disconnect()
+        """payload: dict(AssetName: dict{param_name_1: value_1, ..., param_name_n, value_n}} """
 
-        #status_tag_pid_list = list()
-        #for name, id in param_status_info:
-        #    tag_name = ''.join(asset.config['name'] + '_' + name)
-        #    status_tag_pid_list.append((tag_name, id))
-
-        #status_pkg_list.append(tuple(status_tag_pid_list))
-
-
-        #ctrl_tag_pid_list = list()
-        #for name, id in param_ctrl_info:
-        #    tag_name = ''.join(asset.config['name'] + '_' + name)
-        #    ctrl_tag_pid_list.append((tag_name, id))
-
-        #ctrl_pkg_list.append(tuple(ctrl_tag_pid_list))
-
-        # TAG NAMES are of the form: asset_param
-        status_tags = [asset.config['name'] + '_' + name for name in asset.status.keys()]
-        ctrl_tags = [asset.config['name'] + '_' + name for name in asset.ctrl.keys()]
-
-        tag_list += (status_tags)
-        tag_list += (ctrl_tags)
+        status_payload[asset.config['name']].update(asset.status.items())
+        ctrl_payload[asset.config['name']].update(asset.ctrl.items())
 
     while True:
-        print('[{time}] connecting to database'.format(time=datetime.now().time()))
+        try:
+            print('[{time}] connecting to database'.format(time=datetime.now().time()))
 
-        # TODO: this is inefficient, there is a better way to prepare the pkg tags.
-        pkg = dict()
-        for tag in tag_list:
-            tagparts = tag.split('_')
-            try:
-                pkg[tagparts[0]].update({'_'.join(tagparts[1:]): system.read(tag)})
-            except KeyError:
-                pkg.update({tagparts[0]: {'_'.join(tagparts[1:]): system.read(tag)}})
+            """ Write database with Asset status information """
+            for asset, params in status_payload.items():
+                for param in params.keys():
+                    status_payload[asset][param] = system.read(asset + '_' + param)
+            database.write_param(payload=status_payload)
 
-        database.write_param(payload=pkg)
-        print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
-        await asyncio.sleep(poll_rate)
+            """ Read Asset control information from database """
+            payload = database.read_param(payload=ctrl_payload)
+            for asset, params in payload.items():
+                for param, val in params.items():
+                    system.write(asset + '_' + param, val)
 
+            print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
+            await asyncio.sleep(poll_rate)
+        except:
+            break
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)  # configure logging

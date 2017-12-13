@@ -1,7 +1,6 @@
-from flask import Flask, render_template, request, g, session, flash, redirect, url_for, abort
+from flask import Flask, render_template, request, g, session, flash, redirect, url_for, abort, jsonify
 import sqlite3
 from pathlib import Path
-import json
 
 app = Flask(__name__)            # Create application instance
 app.config.from_object(__name__) # load config from this file, flaskr.py
@@ -16,6 +15,10 @@ app.config.update(dict(
 
 @app.route('/')
 def show_entries():
+    entries = update_status()
+    return render_template('show_entries.html', entries=entries)
+
+def update_status():
     db = get_db()
     entries = []
     cur = db.execute("SELECT * from asset_identity_table")
@@ -23,13 +26,12 @@ def show_entries():
     for id, _ in assets:
         cur = db.execute("SELECT asset_name, param_name, param_value FROM {tn1} "
                          "INNER JOIN {tn2} on {tn2}.asset_id = {tn1}.asset_id "
-                         "WHERE {tn2}.asset_id = {oid} AND {tn1}.param_access = 0"\
+                         "WHERE {tn2}.asset_id = {oid} AND {tn1}.param_access = 0" \
                          .format(tn1='parameter_identity_table',
                                  tn2='asset_identity_table',
                                  oid=id))
         entries.append(cur.fetchall())
-    print(entries)
-    return render_template('show_entries.html', entries=entries)
+    return entries
 
 @app.route('/control')
 def show_control():
@@ -114,3 +116,8 @@ def initdb_command():
     """
     init_db()
     print('Database initalized')
+
+@app.route('/json_update_status', methods= ['GET'])
+def stuff():
+    entries = update_status()
+    return jsonify(entries)

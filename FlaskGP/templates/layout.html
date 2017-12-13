@@ -16,6 +16,12 @@
 	{% for message in get_flashed_messages() %}
 	  <div class=flash>{{ message }}</div>
 	{% endfor %}
+	<script type=text/javascript src="{{
+	url_for('static', filename='jquery-3.2.1.js') }}">
+    </script>
+    <script type=text/javascript>
+        $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    </script>
 	{% block body %}{% endblock %}
 </div>
 

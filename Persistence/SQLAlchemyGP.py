@@ -71,16 +71,36 @@ class SQLAlchemyGP(DBInterface):
         self.session.add(asset)
 
     def write_param(self, **kwargs):
+        """ Write parameters from dict to database assets
+
+        :param kwargs['payload'] dict(AssetName: dict{param_name_1: value_1, ..., param_name_n, value_n}}
+        """
 
         assets = self.session.query(SqlGPAsset).all()
         for asset in assets:
             for param in asset.params:
-                param.param_value = kwargs['payload'][asset.asset_name][param.param_name]
+                try:
+                    param.param_value = kwargs['payload'][asset.asset_name][param.param_name]
+                except:
+                    pass
 
         self.session.commit()
 
     def read_param(self, **kwargs):
-        pass
+        """ Read parameter from database into dict.
+
+        :param kwargs['payload']: dict(AssetName: dict{param_name_1: value_1, ..., param_name_n, value_n}}
+        :return: dict(AssetName: dict{param_name_1: value_1, ..., param_name_n, value_n}}
+        """
+
+        assets = self.session.query(SqlGPAsset).all()
+        for asset in assets:
+            for param in asset.params:
+                try:
+                    kwargs['payload'][asset.asset_name][param.param_name] = param.param_value
+                except:
+                    pass
+        return kwargs['payload']
 
 
 

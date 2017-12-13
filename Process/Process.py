@@ -43,9 +43,12 @@ class ProcessContainer(object):
     def __init__(self):
         self._process_list = list()
         self._process_dict = dict()
-        self._asset_name_map = {'inverter': 'inverter',
-                                 'gridintertie': 'grid',
-                                 'feeder': 'feeder'}
+
+        # DEAD CODE
+        #self._asset_name_map = {'inverter': 'inverter',
+        #                         'gridintertie': 'grid',
+        #                         'feeder': 'feeder'}
+
         self._ready = False
 
     @property
@@ -60,17 +63,18 @@ class ProcessContainer(object):
     def ready(self):
         return self._ready
 
-    def changeAssetNames(self, new_asset_names_dict):
-        """ the internal parameter l_asset_name_dict' maps a standard asset names used in the processes module
-        to an actual asset name used on the tagbus.
+    # DEAD CODE
+    #def changeAssetNames(self, new_asset_names_dict):
+    #    """ the internal parameter l_asset_name_dict' maps a standard asset names used in the processes module
+    #    to an actual asset name used on the tagbus.
 
-        @param: new_asset_names_dict is a dictonary of {'standard asset name': 'actual asset name'}
-        """
-        for key, val in new_asset_names_dict.items():
-            if self._asset_name_map.get(key, 0):
-                self._asset_name_map['key'] = val
-            else:
-                logging.warning('PROCESS CONTAINER: changeAssetNames(): asset name {n} does not exist'.format(n=key))
+    #    @param: new_asset_names_dict is a dictonary of {'standard asset name': 'actual asset name'}
+    #    """
+    #    for key, val in new_asset_names_dict.items():
+    #        if self._asset_name_map.get(key, 0):
+    #            self._asset_name_map['key'] = val
+    #        else:
+    #            logging.warning('PROCESS CONTAINER: changeAssetNames(): asset name {n} does not exist'.format(n=key))
 
     def addProcess(self, new_process):
         """ Add process to container
@@ -155,7 +159,6 @@ class ProcessInterface(object):
     def do_work(self):
         pass
 
-
 class SingleProcess(ProcessInterface):
     def __init__(self):
         super(SingleProcess, self).__init__()
@@ -187,7 +190,59 @@ class AggregateProcess(ProcessInterface):
         self.writeOutput(handle)
 
 
-class INV_SOC_PWR_CTRL(SingleProcess):
+class system_remote_control(SingleProcess):
+    def __init__(self, config_dict):
+        super(system_remote_control, self).__init__()
+        try:
+            self.inverter = config_dict['target_inverter']
+            self.feeder = config_dict['target_feeder']
+            self.grid = config_dict['target_grid_intertie']
+        except KeyError:
+            self.inverter = 'inverter'
+            self.feeder = 'feeder'
+            self.grid = 'grid'
+            logging.warning('PROCESS: SYS_RMT_CTRL: using default component names')
+
+        self.inverter_run = self.inverter + '_run'
+        self.inverter_run_request = self.inverter + '_run_request'
+        self.inverter_enable = self.inverter + '_enable'
+        self.inverter_enabled = self.inverter + '_enabled'
+        self.feeder_close_breaker = self.feeder + '_close_breaker'
+        self.feeder_close_request = self.feeder + '_close_request'
+        self.feeder_enable = self.feeder + '_enable'
+        self.feeder_enabled = self.feeder + '_enabled'
+        self.grid_close_breaker = self.grid + '_close_breaker'
+        self.grid_close_request = self.grid + '_close_request'
+        self.grid_enable = self.grid + '_enable'
+        self.grid_enabled = self.grid + '_enabled'
+
+        self._name = 'system remote control'
+        self._input.update({self.grid_enabled: 0,
+                            self.feeder_enabled: 0,
+                            self.inverter_enabled: 0,
+                            self.grid_close_request: 0,
+                            self.feeder_close_request: 0,
+                            self.inverter_run_request: 0})
+        self._output.update({self.inverter_run: 0,
+                             self.grid_close_breaker: 0,
+                             self.feeder_close_breaker: 0})
+        self._config.update({})
+
+        self.initProcess(config_dict)
+        logging.debug('PROCESS INTERFACE: %s constructed', self.name)
+
+    def do_work(self):
+        self._output[self.inverter_run] = self._input[self.inverter_enabled] and \
+                                          self._input[self.inverter_run_request]
+
+        self._output[self.feeder_close_breaker] = self._input[self.feeder_enabled] and \
+                                                  self._input[self.feeder_close_request]
+
+        self._output[self.grid_close_breaker] = self._input[self.grid_enabled] and \
+                                                self._input[self.grid_close_request]
+
+
+class inverter_soc_power_controller(SingleProcess):
     def __init__(self, config_dict):
 
         try:
@@ -200,7 +255,7 @@ class INV_SOC_PWR_CTRL(SingleProcess):
         self.inverter_target_soc = self.inverter + '_target_soc'
         self.inverter_kw_setpoint = self.inverter + '_kw_setpoint'
 
-        super(INV_SOC_PWR_CTRL, self).__init__()
+        super(inverter_soc_power_controller, self).__init__()
         self._name = self.inverter + ' soc power controller'
         self._input.update({self.inverter_soc: 0})
         self._config.update({self.inverter_target_soc: 0})
@@ -208,7 +263,6 @@ class INV_SOC_PWR_CTRL(SingleProcess):
 
         self.initProcess(config_dict)
         logging.debug('PROCESS INTERFACE: %s constructed', self.name)
-
 
     def do_work(self):
         if self._input[self.inverter_soc] < self.config[self.inverter_target_soc]:
@@ -220,9 +274,9 @@ class INV_SOC_PWR_CTRL(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class INV_DMDLMT_PWR_CTRL(SingleProcess):
+class inverter_demand_limit_power_controller(SingleProcess):
     def __init__(self, config_dict):
-        super(INV_DMDLMT_PWR_CTRL, self).__init__()
+        super(inverter_demand_limit_power_controller, self).__init__()
 
         try:
             self.inverter = config_dict['target_inverter']
@@ -265,9 +319,9 @@ class INV_DMDLMT_PWR_CTRL(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class INV_UPT_STATUS(SingleProcessProxy):
+class inverter_update_status(SingleProcessProxy):
     def __init__(self, config_dict):
-        super(INV_UPT_STATUS, self).__init__()
+        super(inverter_update_status, self).__init__()
         try:
             self.inverter = config_dict['target_inverter']
         except KeyError:
@@ -292,9 +346,9 @@ class INV_UPT_STATUS(SingleProcessProxy):
         logging.debug('PROCESS MODULE: %s deconstructed', self.name)
 
 
-class INV_WRT_CTRL(SingleProcessProxy):
+class inverter_write_control(SingleProcessProxy):
     def __init__(self, config_dict):
-        super(INV_WRT_CTRL, self).__init__()
+        super(inverter_write_control, self).__init__()
 
         try:
             self.inverter = config_dict['target_inverter']
@@ -320,9 +374,9 @@ class INV_WRT_CTRL(SingleProcessProxy):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class GRID_UPT_STATUS(SingleProcessProxy):
+class grid_update_status(SingleProcessProxy):
     def __init__(self, config_dict):
-        super(GRID_UPT_STATUS, self).__init__()
+        super(grid_update_status, self).__init__()
 
         try:
             self.grid = config_dict['target_grid_intertie']
