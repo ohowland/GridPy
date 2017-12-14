@@ -29,7 +29,7 @@ class TestProcessModule(unittest.TestCase):
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
-            self.test_system.addAsset(asset_factory.factory(self.parser[cfg]))
+            self.test_system.add_asset(asset_factory.factory(self.parser[cfg]))
         del asset_factory
 
         # configure processes
@@ -44,7 +44,7 @@ class TestProcessModule(unittest.TestCase):
                                'process_5': {'class_name': 'INV_WRT_CTRL'}})
         process_factory = Process.ProcessFactory()
         for cfg in self.parser.sections():
-            self.test_system.addProcess(process_factory.factory(self.parser[cfg]))
+            self.test_system.add_process(process_factory.factory(self.parser[cfg]))
         del process_factory
 
         self.test_system.registerTags()  # System will register all Asset object parameters with key 'status_*' as a
@@ -109,14 +109,14 @@ class TestProcessModule(unittest.TestCase):
 
         # run updateStatus() twice. virtual components first update is an initializion state, then they begin to report.
         for x in range(2):
-            tasks = asyncio.gather(*[x.updateStatus() for x in self.test_system.assets])
+            tasks = asyncio.gather(*[x.update_status() for x in self.test_system.assets])
             self.loop.run_until_complete(tasks)
 
         self.test_system.updateTagbusFromAssets()
-        self.test_system.runProcesses()
+        self.test_system.run_processes()
         self.test_system.writeAssetsFromTagbus()
 
-        tasks = asyncio.gather(*[x.updateCtrl() for x in self.test_system.assets])
+        tasks = asyncio.gather(*[x.update_control() for x in self.test_system.assets])
         self.loop.run_until_complete(tasks)
 
         self.assertGreater(self.test_system.read('inverter_soc'), 0.0)
@@ -141,7 +141,7 @@ class TestGraphProcess(unittest.TestCase):
                                'process_5': {'class_name': 'INV_WRT_CTRL'}})
         process_factory = Process.ProcessFactory()
         for cfg in parser.sections():
-            self.test_system.addProcess(process_factory.factory(parser[cfg]))
+            self.test_system.add_process(process_factory.factory(parser[cfg]))
         del process_factory
 
     def test_Edgenode_constructor(self):

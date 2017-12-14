@@ -16,25 +16,24 @@ async def update_assets_loop(system, poll_rate):
         try:
             # Collect updateStatus() method references for each asset and package as coroutine task.
             print('[{time}] reading assets'.format(time=datetime.now().time()))
-            await asyncio.gather(*[asset.updateStatus() for asset in gp.assets])
+            await asyncio.gather(*[asset.update_status() for asset in system.assets.assets]) #TODO: no assets.assets
 
-            # Push data from assets to the tagbus
-            system.updateTagbusFromAssets()
-
-            # Run process
+            # Run calculate status processes
             print('[{time}] run process'.format(time=datetime.now().time()))
-            system.runProcesses()
+            system.process.run_all()
 
-            # Push data from tagbus to assets
-            system.writeAssetsFromTagbus()
+            # Run the state macine
+            print('[{time}] run state machine'.format(time=datetime.now().time()))
+            system.state_machine.run()
 
             # Collect updateWrite() method references for each asset and package as coroutine task.
             print('[{time}] writing assets'.format(time=datetime.now().time()))
-            await asyncio.gather(*[asset.updateCtrl() for asset in gp.assets])
+            await asyncio.gather(*[asset.update_control() for asset in system.assets.assets]) #TODO: no assets.assets
 
             await asyncio.sleep(poll_rate)
 
-        except:
+        except Exception as e:
+            print(e, "-- Exiting GridPi")
             pending = asyncio.Task.all_tasks()
             for task in pending:
                 task.cancel()
@@ -99,7 +98,7 @@ if __name__ == '__main__':
     parser.read(bootstrap_parser['BOOTSTRAP']['asset_cfg_local_path'])
     asset_factory = Models.AssetFactory()  # Create Asset Factory object
     for cfg in parser.sections():
-        gp.addAsset(asset_factory.factory(parser[cfg]))
+        gp.add_asset(asset_factory.factory(parser[cfg]))
     del asset_factory
 
     # read process config.ini
@@ -107,7 +106,7 @@ if __name__ == '__main__':
     parser.read(bootstrap_parser['BOOTSTRAP']['process_cfg_local_path'])
     process_factory = Process.ProcessFactory()
     for cfg in parser.sections():
-        gp.addProcess(process_factory.factory(parser[cfg]))
+        gp.add_process(process_factory.factory(parser[cfg]))
     del process_factory
 
     # read persistent storage config.ini
@@ -120,12 +119,11 @@ if __name__ == '__main__':
     del bootstrap_parser
     del parser
 
-    gp.registerTags()  # System will register all Asset object parameters
-    gp.process.sort()  # Sort the process tags by dependency
+    #gp.process.sort()  # Sort the process tags by dependency
 
     loop = asyncio.get_event_loop()  # Get event loop
     loop.create_task(update_assets_loop(gp, poll_rate=.1))
-    loop.create_task(update_persistent_storage(gp, db, 5))
+    #loop.create_task(update_persistent_storage(gp, db, 5))
 
     try:
         loop.run_forever()

@@ -28,7 +28,7 @@ class TestStorageClass(unittest.TestCase):
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
-            self.gp.addAsset(asset_factory.factory(parser[cfg]))
+            self.gp.add_asset(asset_factory.factory(parser[cfg]))
         del asset_factory
 
         # configure persistence model

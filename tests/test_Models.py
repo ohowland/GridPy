@@ -18,12 +18,15 @@ class TestModelModule(unittest.TestCase):
         self.parser = ConfigParser()
         self.parser.read_dict({'FEEDER':
                                    {'class_name': 'VirtualFeeder',
+                                    'class_type': 'feeder',
                                     'name': 'feeder'},
                                'ENERGY_STORAGE':
                                    {'class_name': 'VirtualEnergyStorage',
+                                    'class_type': 'ess',
                                     'name': 'inverter'},
                                'GRID_INTERTIE':
                                    {'class_name': 'VirtualGridIntertie',
+                                    'class_type': 'grid',
                                     'name': 'grid'}})
         self.test_asset = None
         self.loop = asyncio.get_event_loop()
@@ -48,20 +51,20 @@ class TestModelModule(unittest.TestCase):
         logging.debug('********** Test VirtualEnergyStorage state machine **********')
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         kw_setpoint = 50.0
         self.test_asset.ctrl['run'] = True
         self.test_asset.ctrl['kw_setpoint'] = kw_setpoint
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_control())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], True)
         self.assertEqual(self.test_asset.status['kw'], kw_setpoint)
 
         self.test_asset.ctrl['run'] = False
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_control())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], False)
         self.assertEqual(self.test_asset.status['kw'], 0.0)
@@ -73,12 +76,12 @@ class TestModelModule(unittest.TestCase):
 
         self.test_asset.ctrl['run'] = True
         self.test_asset.ctrl['kw_setpoint'] = 50.0
-        self.loop.run_until_complete(self.test_asset.updateStatus())
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
+        self.loop.run_until_complete(self.test_asset.update_status())
+        self.loop.run_until_complete(self.test_asset.update_control())
 
         start_soc = self.test_asset.status['soc']
         for x in range(5):
-            self.loop.run_until_complete(self.test_asset.updateStatus())
+            self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertLess(self.test_asset.status['soc'], start_soc)
 
@@ -86,34 +89,34 @@ class TestModelModule(unittest.TestCase):
         logging.debug('********** Test VirtualFeeder state machine **********')
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['FEEDER'])  # Virtual Feeder
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         self.test_asset.ctrl['run'] = True
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_control())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], True)
 
         self.test_asset.ctrl['run'] = False
-        self.loop.run_until_complete(self.test_asset.updateStatus())
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
+        self.loop.run_until_complete(self.test_asset.update_status())
+        self.loop.run_until_complete(self.test_asset.update_control())
 
     def test_VGI_state_machine(self):
         logging.debug('********** Test VirtualGridIntertie state machine **********')
 
         asset_factory = Models.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['GRID_INTERTIE'])  # Virtual GridIntertie
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         self.test_asset.ctrl['run'] = True
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
-        self.loop.run_until_complete(self.test_asset.updateStatus())
+        self.loop.run_until_complete(self.test_asset.update_control())
+        self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], True)
 
         self.test_asset.ctrl['run'] = False
-        self.loop.run_until_complete(self.test_asset.updateStatus())
-        self.loop.run_until_complete(self.test_asset.updateCtrl())
+        self.loop.run_until_complete(self.test_asset.update_status())
+        self.loop.run_until_complete(self.test_asset.update_control())
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)

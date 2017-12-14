@@ -23,29 +23,11 @@ class TestCoreModule(unittest.TestCase):
             self.test_asset = (asset_factory.factory(self.parser[cfg]))
         del asset_factory
 
-        self.test_system.addAsset(self.test_asset)
+        self.test_system.add_asset(self.test_asset)
 
         self.assertEqual(self.test_asset, self.test_system._assets[0])
 
     def test_add_process(self):
-        pass
-
-    def test_add_tagbus(self):
-        pass
-
-    def test_register_tags(self):
-        pass
-
-    def test_update_tagbus_from_asset(self):
-        pass
-
-    def test_write_asset_from_tagbus(self):
-        pass
-
-    def write(self):
-        pass
-
-    def read(self):
         pass
 
 if __name__ == '__main__':

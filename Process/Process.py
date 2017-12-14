@@ -100,6 +100,9 @@ class ProcessContainer(object):
 
         self._ready = True
 
+    def run_all(self):
+        pass
+
     def run(self, handle):
         """ Run all processes in container
 
@@ -190,9 +193,9 @@ class AggregateProcess(ProcessInterface):
         self.writeOutput(handle)
 
 
-class system_remote_control(SingleProcess):
+class SystemRemoteControl(SingleProcess):
     def __init__(self, config_dict):
-        super(system_remote_control, self).__init__()
+        super(SystemRemoteControl, self).__init__()
         try:
             self.inverter = config_dict['target_inverter']
             self.feeder = config_dict['target_feeder']
@@ -242,7 +245,7 @@ class system_remote_control(SingleProcess):
                                                 self._input[self.grid_close_request]
 
 
-class inverter_soc_power_controller(SingleProcess):
+class EssSocPowerController(SingleProcess):
     def __init__(self, config_dict):
 
         try:
@@ -255,7 +258,7 @@ class inverter_soc_power_controller(SingleProcess):
         self.inverter_target_soc = self.inverter + '_target_soc'
         self.inverter_kw_setpoint = self.inverter + '_kw_setpoint'
 
-        super(inverter_soc_power_controller, self).__init__()
+        super(EssSocPowerController, self).__init__()
         self._name = self.inverter + ' soc power controller'
         self._input.update({self.inverter_soc: 0})
         self._config.update({self.inverter_target_soc: 0})
@@ -274,9 +277,9 @@ class inverter_soc_power_controller(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class inverter_demand_limit_power_controller(SingleProcess):
+class EssDemandLimitPowerController(SingleProcess):
     def __init__(self, config_dict):
-        super(inverter_demand_limit_power_controller, self).__init__()
+        super(EssDemandLimitPowerController, self).__init__()
 
         try:
             self.inverter = config_dict['target_inverter']
@@ -319,9 +322,9 @@ class inverter_demand_limit_power_controller(SingleProcess):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class inverter_update_status(SingleProcessProxy):
+class EssUpdateStatus(SingleProcessProxy):
     def __init__(self, config_dict):
-        super(inverter_update_status, self).__init__()
+        super(EssUpdateStatus, self).__init__()
         try:
             self.inverter = config_dict['target_inverter']
         except KeyError:
@@ -346,9 +349,9 @@ class inverter_update_status(SingleProcessProxy):
         logging.debug('PROCESS MODULE: %s deconstructed', self.name)
 
 
-class inverter_write_control(SingleProcessProxy):
+class EssWriteControl(SingleProcessProxy):
     def __init__(self, config_dict):
-        super(inverter_write_control, self).__init__()
+        super(EssWriteControl, self).__init__()
 
         try:
             self.inverter = config_dict['target_inverter']
@@ -374,9 +377,9 @@ class inverter_write_control(SingleProcessProxy):
         logging.debug('PROCESS INTERFACE: %s deconstructed', self.name)
 
 
-class grid_update_status(SingleProcessProxy):
+class GridUpdateStatus(SingleProcessProxy):
     def __init__(self, config_dict):
-        super(grid_update_status, self).__init__()
+        super(GridUpdateStatus, self).__init__()
 
         try:
             self.grid = config_dict['target_grid_intertie']

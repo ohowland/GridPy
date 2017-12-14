@@ -36,6 +36,43 @@ class AssetFactory(object):
         new_class = getattr(new_module, class_type)
         return new_class(configparser)
 
+class AssetContainer(object):
+    def __init__(self):
+
+        self._assets = list()
+
+        self._ess = list()
+        self._grid = list()
+        self._feeder = list()
+
+    def add_asset(self, asset_obj):
+
+        self._assets.append(asset_obj)
+
+        if asset_obj.config['class_type'] == 'ess':
+            self._ess.append(asset_obj)
+        elif asset_obj.config['class_type'] == 'grid':
+            self._grid.append(asset_obj)
+        elif asset_obj.config['class_type'] == 'feeder':
+            self._feeder.append(asset_obj)
+
+    @property
+    def assets(self):
+        return self._assets
+
+    @property
+    def ess(self):
+        return self._ess
+
+    @property
+    def grid(self):
+        return self._grid
+
+    @property
+    def feeder(self):
+        return self._feeder
+
+
 class Asset(object):
     """Basic asset in power system.
        All physical devices in the system are considered 'Asset' objects
@@ -51,6 +88,7 @@ class Asset(object):
         self.config.update({
             'name' : None,
             'class_name': None,
+            'class_type': None,
             #  'freq_rated': None,
             #  'volt_rated': None,
             #  'cap_kva_rated': 0.0,
@@ -85,14 +123,14 @@ class Asset(object):
                     val = float(val)
                 self.config[key] = val
 
-    def updateStatus(self):
+    def update_status(self):
         """ The update status routine on any asset is as follows:
             1. Update internal dictionary from communications interface
             2. Map internal status dictionary to abstract parent interface
         """
         return
 
-    def updateCtrl(self):
+    def update_control(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
@@ -131,9 +169,9 @@ class CtrlAsset(Asset):
             'clear_faults' : False
         })
 
-    def updateStatus(self):
+    def update_status(self):
 
-        super(CtrlAsset, self).updateStatus()
+        super(CtrlAsset, self).update_status()
 
         # self.status['cap_kw_pos_avail'] = self.config['cap_kw_pos_rated'] * self.ctrl['enabled']
         # self.status['cap_kw_neg_avail'] = self.config['cap_kw_neg_rated'] * self.ctrl['enabled']
@@ -149,7 +187,7 @@ class GridIntertie(CtrlAsset):
         super(GridIntertie, self).__init__()
 
     def update(self):
-        super(GridIntertie, self).updateStatus()
+        super(GridIntertie, self).update_status()
 
 
 class EnergyStorage(CtrlAsset):
@@ -166,7 +204,7 @@ class EnergyStorage(CtrlAsset):
         })
 
     def update(self):
-        super(EnergyStorage, self).updateStatus()
+        super(EnergyStorage, self).update_status()
 
 
 class Feeder(CtrlAsset):
@@ -177,4 +215,4 @@ class Feeder(CtrlAsset):
         super(Feeder, self).__init__()
 
     def update(self):
-        super(Feeder, self).updateStatus()
+        super(Feeder, self).update_status()

@@ -31,7 +31,7 @@ class VirtualEnergyStorage(EnergyStorage):
     def __del__(self):
         logging.debug('ASSET INTERFACE: %s deconstructed', self.config['name'])
 
-    async def updateStatus(self):
+    async def update_status(self):
         """ The update status routine on any asset is as follows:
             1. Update internal dictionary from communications interface
             2. Map internal status dictionary to abstract parent interface
@@ -44,7 +44,7 @@ class VirtualEnergyStorage(EnergyStorage):
         self.status['online'] = self.internal_status['online']
         self.status['soc'] = self.internal_status['soc']
 
-    async def updateCtrl(self):
+    async def update_control(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
