@@ -61,6 +61,29 @@ class TagBus(object):
         for key, val in self.tags.items():
             logging.info('tagbus.dump(): %s %s %s', key, val.value, val.units)
 
+class AssetContainer(object):
+    def __init__(self):
+        self._asset_list = list()
+        self._asset_dict = dict()
+
+    def add_asset(self):
+        pass
+
+    def get_asset_list(self, type_name):
+        pass
+
+
+
+
+class Core(object):
+    def __init__(self):
+        self._assets = AssetContainer
+        self._asset_dir = dict()
+        self._process = Process.ProcessContainer
+
+        def read(self, key):
+
+
 
 class System(object):
     """System object holds all data that defines a a system process loop.
