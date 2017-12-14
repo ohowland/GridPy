@@ -100,10 +100,7 @@ class ProcessContainer(object):
 
         self._ready = True
 
-    def run_all(self):
-        pass
-
-    def run(self, handle):
+    def run(self, asset_container):
         """ Run all processes in container
 
         """

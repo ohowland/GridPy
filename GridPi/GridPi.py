@@ -20,7 +20,7 @@ async def update_assets_loop(system, poll_rate):
 
             # Run calculate status processes
             print('[{time}] run process'.format(time=datetime.now().time()))
-            system.process.run_all()
+            system.process.run()
 
             # Run the state macine
             print('[{time}] run state machine'.format(time=datetime.now().time()))
