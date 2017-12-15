@@ -80,12 +80,19 @@ class AssetContainer(object):
             try:
                 resp.update({tag: self._asset_dict[obj_name].config[param_name]})
             except KeyError:
-                logging.warning('Class %s: Unable to locate: %s', self.__name__, )
+                logging.warning('Class %s: Unable to locate: %s', self.__name__, tag)
         return resp
 
     def write(self, input_dict):
-        pass
+        for tag, val in input_dict.items():
+            re = self.tag_expression.match(tag)
+            obj_name = re.group(1)
+            param_name = re.group(2)
 
+            try:
+                self._asset_dict[obj_name].ctrl[param_name] = val
+            except KeyError:
+                logging.warning('Class %s: Unable to locate: %s', self.__name__, tag)
 
     @property
     def assets(self):
