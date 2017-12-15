@@ -1,11 +1,12 @@
-import Models
 import Comm
 
+from GridPi.lib import models
 
-class EasyGen3k(Models.Diesel):
+
+class EasyGen3k(models.Diesel):
 
     def __init__(self, config_dict):
-        Models.Diesel.__init__(self)
+        models.Diesel.__init__(self)
 
         # Configure model
         self.init_model(config_dict)

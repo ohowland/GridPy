@@ -1,15 +1,12 @@
-import unittest
-import logging
 import asyncio
-import time
-
-from GridPi import gridpi_core
-from Models import model_core
-from Process import process_core
-from Persistence import persistence_core
+import logging
+import unittest
 from configparser import ConfigParser
 
-import unittest
+from GridPi.lib import gridpi_core
+from GridPi.lib.models import model_core
+from GridPi.lib.process import process_core
+
 
 class TestGridPi(unittest.TestCase):
 
@@ -33,7 +30,7 @@ class TestGridPi(unittest.TestCase):
                                     'name': 'grid'}})
 
         asset_factory = model_core.AssetFactory()  # Create Asset Factory object
-        for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
+        for cfg in parser.sections():  # Add models to System, The asset factory acts on a configuration
             self.gp.add_asset(asset_factory.factory(parser[cfg]))
         del asset_factory
 
@@ -58,7 +55,7 @@ class TestGridPi(unittest.TestCase):
                               {'class_name': 'DBSQLite3',
                                'local_path': '/database/GridPi.sqlite',
                                'empty_database_on_start': 1}})
-        persistence_factory = Persistence.PersistenceFactory()
+        persistence_factory = persistence.PersistenceFactory()
         for cfg in parser.sections():
             self.db = persistence_factory.factory(parser[cfg])
         del persistence_factory

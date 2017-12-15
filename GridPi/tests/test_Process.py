@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 
-import unittest
-import logging
 import asyncio
+import logging
+import unittest
 from configparser import ConfigParser
 
-from Models import model_core
-from GridPi import gridpi_core
-from Process import process_core
-from Process import process_graph
+from GridPi.lib import gridpi_core
+from GridPi.lib.models import model_core
+from GridPi.lib.process import process_core, process_graph
 
 class TestProcessModule(unittest.TestCase):
     def setUp(self):
-        "Setup for Process Module Testing"
+        "Setup for process Module Testing"
         self.test_system = gridpi_core.System()  # Create System container object
 
         # configure asset models
@@ -28,7 +27,7 @@ class TestProcessModule(unittest.TestCase):
                                     'name': 'grid'}})
 
         asset_factory = model_core.AssetFactory()  # Create Asset Factory object
-        for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
+        for cfg in self.parser.sections():  # Add models to System, The asset factory acts on a configuration
             self.test_system.add_asset(asset_factory.factory(self.parser[cfg]))
         del asset_factory
 
@@ -55,7 +54,7 @@ class TestProcessModule(unittest.TestCase):
     def test_process_factory(self):
         """ To test if the process factory returns an object of the desired class
         """
-        logging.debug('********** Test Process: test_process_factory **********')
+        logging.debug('********** Test process: test_process_factory **********')
 
         self.parser.clear()
         self.parser.read_dict({'test_process': {'class_name': 'EssSocPowerController',
@@ -71,7 +70,7 @@ class TestProcessModule(unittest.TestCase):
         ''' Test the tag aggregation class constructor aggregates two classes with similar outputs
 
         '''
-        logging.debug('********** Test Process: test_tag_aggregation **********')
+        logging.debug('********** Test process: test_tag_aggregation **********')
         tag = 'inverter_kw_setpoint'
 
         inv_soc_pwr_ctrl_config = {
@@ -102,7 +101,7 @@ class TestProcessModule(unittest.TestCase):
         self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], process_core.EssDemandLimitPowerController)
 
     def test_process(self):
-        logging.debug('********** Test Process: test_process **********')
+        logging.debug('********** Test process: test_process **********')
         """ To test if data can be brought onto the tagbus from an asset, processed, and written back to the asset
         """
 
@@ -122,7 +121,7 @@ class TestProcessModule(unittest.TestCase):
         self.assertGreater(resp[search_param], 0.0)
 
     def test_GraphDependencies_sort(self):
-        logging.debug('********** Test Process: test_graph_dependencies **********')
+        logging.debug('********** Test process: test_graph_dependencies **********')
         self.test_system.process.sort()
 
 class TestGraphProcess(unittest.TestCase):

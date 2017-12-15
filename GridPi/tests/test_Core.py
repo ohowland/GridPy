@@ -1,9 +1,9 @@
-from GridPi import gridpi_core
-from Models import model_core
-
-import unittest
 import logging
+import unittest
 from configparser import ConfigParser
+
+from GridPi.lib import gridpi_core
+from GridPi.lib.models import model_core
 
 class TestCoreModule(unittest.TestCase):
 
@@ -19,7 +19,7 @@ class TestCoreModule(unittest.TestCase):
                                     'name': 'test'}})
 
         asset_factory = model_core.AssetFactory()  # Create Asset Factory object
-        for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
+        for cfg in self.parser.sections():  # Add models to System, The asset factory acts on a configuration
             self.test_asset = (asset_factory.factory(self.parser[cfg]))
         del asset_factory
 

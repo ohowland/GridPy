@@ -1,12 +1,11 @@
-from Persistence import SQLAlchemyGP
-
-import unittest
 import logging
-
-from GridPi import gridpi_core
-from Models import model_core
-from Persistence import SQLAlchemyGP
+import unittest
 from configparser import ConfigParser
+
+from GridPi.lib import gridpi_core
+from GridPi.lib.models import model_core
+from GridPi.lib.persistence import SQLAlchemyGP
+
 
 class TestStorageClass(unittest.TestCase):
 
@@ -28,13 +27,11 @@ class TestStorageClass(unittest.TestCase):
                                     'name': 'grid'}})
 
         asset_factory = model_core.AssetFactory()  # Create Asset Factory object
-        for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
+        for cfg in parser.sections():  # Add models to System, The asset factory acts on a configuration
             self.gp.add_asset(asset_factory.factory(parser[cfg]))
         del asset_factory
 
-        self.gp.registerTags()  # System will register all Asset object parameters
-
-        self.db = SQLAlchemyGP.SqlGP()
+        self.db = SQLAlchemyGP.SQLAlchemyGP()
 
     def tearDown(self):
         del self.gp

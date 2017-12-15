@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
-import unittest
-import logging
 import asyncio
-
-from Models import model_core
-from Models import VirtualEnergyStorage
-from Models import VirtualFeeder
-from Models import VirtualGridIntertie
+import logging
+import unittest
 from configparser import ConfigParser
+
+from GridPi.lib.models import model_core, VirtualEnergyStorage, VirtualGridIntertie, VirtualFeeder
 
 class TestModelModule(unittest.TestCase):
 
@@ -33,7 +30,7 @@ class TestModelModule(unittest.TestCase):
         pass
 
     def test_asset_factory(self):
-        logging.debug('********** Test Models asset factory **********')
+        logging.debug('********** Test models asset factory **********')
         asset_factory = model_core.AssetFactory()  # Create Asset Factory object
 
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])
@@ -70,7 +67,7 @@ class TestModelModule(unittest.TestCase):
     def test_VES_state_machine_soc_tracking(self):
         logging.debug('********** Test VirtualEnergyStorage soc tracking **********')
         asset_factory = model_core.AssetFactory()  # Create Asset Factory object
-        self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])  # Virtual Energy Persistence
+        self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])  # Virtual Energy persistence
 
         self.test_asset.control['run'] = True
         self.test_asset.control['kw_setpoint'] = 50.0

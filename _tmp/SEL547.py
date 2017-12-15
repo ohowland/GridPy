@@ -1,11 +1,12 @@
-import Models
 import Comm
 
+from GridPi.lib import models
 
-class SEL547(Models.GridIntertie):
+
+class SEL547(models.GridIntertie):
 
     def __init__(self, config_dict):
-        Models.GridIntertie.__init__(self)
+        models.GridIntertie.__init__(self)
 
         self.init_model(config_dict)
 

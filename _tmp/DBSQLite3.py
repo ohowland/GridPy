@@ -1,9 +1,10 @@
-from Persistence import persistence_core
-
-import sqlite3
 import logging
+import sqlite3
 from pathlib import Path
 from random import randint
+
+from GridPi.lib.persistence import persistence_core
+
 
 def sqlite_default_value(field_type):
     if field_type == 'INTEGER':
