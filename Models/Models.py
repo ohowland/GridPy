@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from re import compile, match
+import logging
 
 def isfloat(x):
     try:
@@ -40,14 +42,18 @@ class AssetContainer(object):
     def __init__(self):
 
         self._assets = list()
+        self._asset_dict = {}
 
         self._ess = list()
         self._grid = list()
         self._feeder = list()
 
+        self.tag_expression = compile('^([a-z A-Z 0-9]+)_([\w]+)')
+
     def add_asset(self, asset_obj):
 
         self._assets.append(asset_obj)
+        self._asset_dict.update({asset_obj.config['name']: asset_obj})
 
         if asset_obj.config['class_type'] == 'ess':
             self._ess.append(asset_obj)
@@ -55,6 +61,31 @@ class AssetContainer(object):
             self._grid.append(asset_obj)
         elif asset_obj.config['class_type'] == 'feeder':
             self._feeder.append(asset_obj)
+
+    def read(self, input_dict):
+        resp = {}
+        for tag in input_dict.keys():
+            re = self.tag_expression.match(tag)
+            obj_name = re.group(1)
+            param_name = re.group(2)
+
+            ''' look for param in Status dict'''
+            try:
+                resp.update({tag: self._asset_dict[obj_name].status[param_name]})
+                continue
+            except KeyError:
+                pass
+
+            ''' if param not foind in Status dict, check Config dict'''
+            try:
+                resp.update({tag: self._asset_dict[obj_name].config[param_name]})
+            except KeyError:
+                logging.warning('Class %s: Unable to locate: %s', self.__name__, )
+        return resp
+
+    def write(self, input_dict):
+        pass
+
 
     @property
     def assets(self):
@@ -201,6 +232,10 @@ class EnergyStorage(CtrlAsset):
         })
         self.ctrl.update({
             'kw_setpoint': 0.0
+        })
+
+        self.config.update({
+            'target_soc': 0.0
         })
 
     def update(self):

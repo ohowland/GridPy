@@ -39,15 +39,11 @@ class ProcessFactory(object):
         new_class = getattr(new_module, class_type)
         return new_class(configparser)
 
+
 class ProcessContainer(object):
     def __init__(self):
         self._process_list = list()
         self._process_dict = dict()
-
-        # DEAD CODE
-        #self._asset_name_map = {'inverter': 'inverter',
-        #                         'gridintertie': 'grid',
-        #                         'feeder': 'feeder'}
 
         self._ready = False
 
@@ -63,22 +59,8 @@ class ProcessContainer(object):
     def ready(self):
         return self._ready
 
-    # DEAD CODE
-    #def changeAssetNames(self, new_asset_names_dict):
-    #    """ the internal parameter l_asset_name_dict' maps a standard asset names used in the processes module
-    #    to an actual asset name used on the tagbus.
-
-    #    @param: new_asset_names_dict is a dictonary of {'standard asset name': 'actual asset name'}
-    #    """
-    #    for key, val in new_asset_names_dict.items():
-    #        if self._asset_name_map.get(key, 0):
-    #            self._asset_name_map['key'] = val
-    #        else:
-    #            logging.warning('PROCESS CONTAINER: changeAssetNames(): asset name {n} does not exist'.format(n=key))
-
-    def addProcess(self, new_process):
+    def add_process(self, new_process):
         """ Add process to container
-
         """
         self._ready = False
         self._process_dict.update({new_process.name: new_process})
@@ -100,14 +82,13 @@ class ProcessContainer(object):
 
         self._ready = True
 
-    def run(self, asset_container):
+    def run_all(self, read_func, write_func):
         """ Run all processes in container
-
         """
-        logging.debug('PROCESS CONTAINER: Running the following processes', self.process_list)
+        logging.debug('PROCESS CONTAINER: Running the following processes %s', self.process_list)
         if self._ready:
             for process in self._process_list:
-                process.run(handle)
+                process.run(read_func, write_func)
         else:
             print('Process module not ready, please run self.sort()')
 
@@ -144,24 +125,26 @@ class ProcessInterface(object):
                     val = float(val)
                 self.config[key] = val
 
-    def run(self, handle):
-        self.readInput(handle)
+    def run(self, read_func, write_func):
+        self.readInput(read_func)
         self.do_work()
-        self.writeOutput(handle)
+        self.writeOutput(write_func)
 
-    def readInput(self, handle):
-        self._input = handle.read_multi(self.input)
+    def readInput(self, read_func):
+        self._input = read_func(self.input)
 
-    def writeOutput(self, handle):
+    def writeOutput(self, write_func):
         #logging.info('PROCESS INTERFACE: %s writing %s', self.name, self.output)
-        handle.write_multi(self.output)
+        write_func(self.output)
 
     def do_work(self):
         pass
 
+
 class SingleProcess(ProcessInterface):
     def __init__(self):
         super(SingleProcess, self).__init__()
+
 
 class SingleProcessProxy(SingleProcess):
     """ SingleProcessProxy class overrides the run command. These classes are the 'Update Status' and 'Write Control'
@@ -172,7 +155,7 @@ class SingleProcessProxy(SingleProcess):
     def __init__(self):
         super(SingleProcess, self).__init__()
 
-    def run(self, handle):
+    def run(self, read_func, write_func):
         pass
 
 
@@ -185,9 +168,10 @@ class AggregateProcess(ProcessInterface):
         for process in self._process_list:
             self._input.update(process._input)
 
-    def run(self, handle):
+    def run(self, read_func, write_func):
+        self.readInput(read_func)
         self.do_work()
-        self.writeOutput(handle)
+        self.writeOutput(write_func)
 
 
 class SystemRemoteControl(SingleProcess):
@@ -356,7 +340,7 @@ class EssWriteControl(SingleProcessProxy):
             self.inverter = 'inverter'
             logging.warning('PROCESS: INV_WRT_CTRL: target_inverter not set, defaulting to "inverter"')
 
-        self._name = self.inverter + 'write control'
+        self._name = self.inverter + ' write control'
         self._input.update({self.inverter + '_kw_setpoint': 0})
         self._config.update({'asset_ref': None})
         self._output = dict()
@@ -384,7 +368,7 @@ class GridUpdateStatus(SingleProcessProxy):
             self.grid = 'grid'
             logging.warning('PROCESS: INV_DMDLMT_PWR_CTRL: target_grid_interconnect not set, defaulting to "grid"')
 
-        self._name = self.grid+'update status'
+        self._name = self.grid + ' update status'
         self._input = dict()  # Empty input, acts as root node
         self._config.update({'asset_ref': None})
         self._output.update({self.grid+'_kw': None})

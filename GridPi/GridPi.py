@@ -12,6 +12,7 @@ from configparser import ConfigParser
 
 
 async def update_assets_loop(system, poll_rate):
+
     while True:
         try:
             # Collect updateStatus() method references for each asset and package as coroutine task.
@@ -20,7 +21,7 @@ async def update_assets_loop(system, poll_rate):
 
             # Run calculate status processes
             print('[{time}] run process'.format(time=datetime.now().time()))
-            system.process.run()
+            system.run_processes()
 
             # Run the state macine
             print('[{time}] run state machine'.format(time=datetime.now().time()))
@@ -46,39 +47,44 @@ async def update_persistent_storage(system, database, poll_rate):
     status_payload = dict()
     ctrl_payload = dict()
 
-    for asset in system.assets:
-        database.add_asset(asset.config['name'])
-        database.add_asset_params(asset.config['name'], 0, *list(asset.status.keys()))
-        database.add_asset_params(asset.config['name'], 1, *list(asset.ctrl.keys()))
+    for asset in system.assets.assets:
+        database.add_asset(asset.name)
+        database.add_asset_params(asset.name, 0, *list(asset.__dict__.keys()))
+        #database.add_asset_params(asset.name, 1, *['enable', 'run'])
 
-        status_payload.update({asset.config['name']: dict()})
-        ctrl_payload.update({asset.config['name']: dict()})
+        #status_payload.update({asset.name: dict()})
+        #ctrl_payload.update({asset.config['name']: dict()})
 
         """payload: dict(AssetName: dict{param_name_1: value_1, ..., param_name_n, value_n}} """
 
-        status_payload[asset.config['name']].update(asset.status.items())
-        ctrl_payload[asset.config['name']].update(asset.ctrl.items())
+        #status_payload[asset.name].update(asset.__dict__.items())
+        #ctrl_payload[asset.config['name']].update(asset.ctrl.items())
 
     while True:
-        try:
+        #try:
             print('[{time}] connecting to database'.format(time=datetime.now().time()))
 
             """ Write database with Asset status information """
-            for asset, params in status_payload.items():
-                for param in params.keys():
-                    status_payload[asset][param] = system.read(asset + '_' + param)
-            database.write_param(payload=status_payload)
+            status_payload = {}
+            for asset in system.assets.assets:
+                status_payload[asset.name] = {}
+                for key, val in asset.__dict__.items():
+                    status_payload[asset.name][key] = val
+            print(status_payload)
+            #database.write_param(payload=status_payload)
 
-            """ Read Asset control information from database """
+            """ Read Asset control information from database
             payload = database.read_param(payload=ctrl_payload)
             for asset, params in payload.items():
                 for param, val in params.items():
                     system.write(asset + '_' + param, val)
+            """
 
             print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
             await asyncio.sleep(poll_rate)
-        except:
-            break
+        #except Exception as e:
+        #    print('GP Database Loop Error: {error}'.format(error=e))
+        #    break
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)  # configure logging
@@ -119,7 +125,7 @@ if __name__ == '__main__':
     del bootstrap_parser
     del parser
 
-    #gp.process.sort()  # Sort the process tags by dependency
+    gp.process.sort()  # Sort the process tags by dependency
 
     loop = asyncio.get_event_loop()  # Get event loop
     loop.create_task(update_assets_loop(gp, poll_rate=.1))
@@ -129,4 +135,3 @@ if __name__ == '__main__':
         loop.run_forever()
     except:
         loop.close()
-        gp.tagbus.dump()

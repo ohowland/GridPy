@@ -34,21 +34,20 @@ class TestProcessModule(unittest.TestCase):
 
         # configure processes
         self.parser.clear()
-        self.parser.read_dict({'process_1': {'class_name': 'INV_UPT_STATUS'},
-                               'process_2': {'class_name': 'GRID_UPT_STATUS'},
-                               'process_3': {'class_name': 'INV_SOC_PWR_CTRL',
+        self.parser.read_dict({'process_1': {'class_name': 'EssUpdateStatus'},
+                               'process_2': {'class_name': 'GridUpdateStatus'},
+                               'process_3': {'class_name': 'EssSocPowerController',
                                              'inverter_target_soc': 0.6},
-                               'process_4': {'class_name': 'INV_DMDLMT_PWR_CTRL',
+                               'process_4': {'class_name': 'EssDemandLimitPowerController',
                                              'grid_kw_import_limit': 20,
                                              'grid_kw_export_limit': 20},
-                               'process_5': {'class_name': 'INV_WRT_CTRL'}})
+                               'process_5': {'class_name': 'EssWriteControl'}})
         process_factory = Process.ProcessFactory()
         for cfg in self.parser.sections():
             self.test_system.add_process(process_factory.factory(self.parser[cfg]))
         del process_factory
 
-        self.test_system.registerTags()  # System will register all Asset object parameters with key 'status_*' as a
-                                          # tag in system.Tagbus object.
+        self.test_system.process.sort()
 
         # Get an asyncio event loop so that we can run updateStatus() and updateCtrl() on assets.
         self.loop = asyncio.get_event_loop()
@@ -59,13 +58,13 @@ class TestProcessModule(unittest.TestCase):
         logging.debug('********** Test Process: test_process_factory **********')
 
         self.parser.clear()
-        self.parser.read_dict({'test_process': {'class_name': 'INV_SOC_PWR_CTRL',
+        self.parser.read_dict({'test_process': {'class_name': 'EssSocPowerController',
                                                 'inverter_target_soc': 0.6}})
 
         PF = Process.ProcessFactory()
         test_class = PF.factory(self.parser['test_process'])
 
-        self.assertIsInstance(test_class, Process.INV_SOC_PWR_CTRL)
+        self.assertIsInstance(test_class, Process.EssSocPowerController)
         self.assertEqual(test_class.config['inverter_target_soc'], 0.6)
 
     def test_tag_aggregation(self):
@@ -76,21 +75,21 @@ class TestProcessModule(unittest.TestCase):
         tag = 'inverter_kw_setpoint'
 
         inv_soc_pwr_ctrl_config = {
-            "class_name": 'INV_SOC_PWR_CTRL',
+            "class_name": 'EssSocPowerController',
             "inverter_target_soc": 0.5,
             "target_inveter": 'inverter'
         }
 
         inv_dmdlmt_pwr_ctrl_config = {
-            "class_name": 'INV_DMDLMT_PWR_CTRL',
+            "class_name": 'EssDemandLimitPowerController',
             "grid_kw_import_limit": 10,
             "grid_kw_export_limit": 10,
             "target_inverter": 'inverter',
             "target_grid_intertie": 'grid'
         }
 
-        inv_soc_pwr_ctrl = Process.INV_SOC_PWR_CTRL(inv_soc_pwr_ctrl_config)
-        inv_dmdlmt_pwr_ctrl = Process.INV_DMDLMT_PWR_CTRL(inv_dmdlmt_pwr_ctrl_config)
+        inv_soc_pwr_ctrl = Process.EssSocPowerController(inv_soc_pwr_ctrl_config)
+        inv_dmdlmt_pwr_ctrl = Process.EssDemandLimitPowerController(inv_dmdlmt_pwr_ctrl_config)
 
         process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
         inv_pwr_ctrl_agg = Process.AggregateProcessSummation(process_list)
@@ -99,8 +98,8 @@ class TestProcessModule(unittest.TestCase):
         self.assertIsInstance(inv_pwr_ctrl_agg, Process.AggregateProcess)
 
         # Aggregate object composed of given objects
-        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], Process.INV_SOC_PWR_CTRL)
-        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], Process.INV_DMDLMT_PWR_CTRL)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], Process.EssSocPowerController)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], Process.EssDemandLimitPowerController)
 
     def test_process(self):
         logging.debug('********** Test Process: test_process **********')
@@ -109,17 +108,18 @@ class TestProcessModule(unittest.TestCase):
 
         # run updateStatus() twice. virtual components first update is an initializion state, then they begin to report.
         for x in range(2):
-            tasks = asyncio.gather(*[x.update_status() for x in self.test_system.assets])
+            tasks = asyncio.gather(*[x.update_status() for x in self.test_system.assets.assets])
             self.loop.run_until_complete(tasks)
 
-        self.test_system.updateTagbusFromAssets()
         self.test_system.run_processes()
-        self.test_system.writeAssetsFromTagbus()
 
-        tasks = asyncio.gather(*[x.update_control() for x in self.test_system.assets])
+        tasks = asyncio.gather(*[x.update_control() for x in self.test_system.assets.assets])
         self.loop.run_until_complete(tasks)
 
-        self.assertGreater(self.test_system.read('inverter_soc'), 0.0)
+        search_param = 'inverter_soc'
+        resp = self.test_system.assets.read({search_param: 1})
+
+        self.assertGreater(resp[search_param], 0.0)
 
     def test_GraphDependencies_sort(self):
         logging.debug('********** Test Process: test_graph_dependencies **********')
@@ -131,14 +131,14 @@ class TestGraphProcess(unittest.TestCase):
 
         # configure processes
         parser = ConfigParser()
-        parser.read_dict({'process_1': {'class_name': 'INV_UPT_STATUS'},
-                               'process_2': {'class_name': 'GRID_UPT_STATUS'},
-                               'process_3': {'class_name': 'INV_SOC_PWR_CTRL',
+        parser.read_dict({'process_1': {'class_name': 'EssUpdateStatus'},
+                               'process_2': {'class_name': 'GridUpdateStatus'},
+                               'process_3': {'class_name': 'EssSocPowerController',
                                              'inverter_target_soc': 0.6},
-                               'process_4': {'class_name': 'INV_DMDLMT_PWR_CTRL',
+                               'process_4': {'class_name': 'EssDemandLimitPowerController',
                                              'grid_kw_import_limit': 20,
                                              'grid_kw_export_limit': 20},
-                               'process_5': {'class_name': 'INV_WRT_CTRL'}})
+                               'process_5': {'class_name': 'EssWriteControl'}})
         process_factory = Process.ProcessFactory()
         for cfg in parser.sections():
             self.test_system.add_process(process_factory.factory(parser[cfg]))

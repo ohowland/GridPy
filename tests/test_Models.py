@@ -18,16 +18,14 @@ class TestModelModule(unittest.TestCase):
         self.parser = ConfigParser()
         self.parser.read_dict({'FEEDER':
                                    {'class_name': 'VirtualFeeder',
-                                    'class_type': 'feeder',
                                     'name': 'feeder'},
                                'ENERGY_STORAGE':
                                    {'class_name': 'VirtualEnergyStorage',
-                                    'class_type': 'ess',
                                     'name': 'inverter'},
                                'GRID_INTERTIE':
                                    {'class_name': 'VirtualGridIntertie',
-                                    'class_type': 'grid',
                                     'name': 'grid'}})
+
         self.test_asset = None
         self.loop = asyncio.get_event_loop()
 
@@ -117,6 +115,26 @@ class TestModelModule(unittest.TestCase):
         self.test_asset.ctrl['run'] = False
         self.loop.run_until_complete(self.test_asset.update_status())
         self.loop.run_until_complete(self.test_asset.update_control())
+
+
+    def test_read_asset_container(self):
+        logging.debug('********** Test read_asset_container **********')
+        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])
+
+        self.test_asset.status['soc'] = 0.5
+        self.test_asset.config['target_soc'] = 0.6
+
+        self.AC = Models.AssetContainer()
+        self.AC.add_asset(self.test_asset)
+
+        search_param1 = 'inverter_soc'
+        search_param2 = 'inverter_target_soc'
+
+        resp = self.AC.read({search_param1: 0, search_param2: 0})
+
+        self.assertEqual(resp[search_param1], 0.5)
+        self.assertEqual(resp[search_param2], 0.6)
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)

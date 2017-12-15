@@ -25,7 +25,7 @@ class TestCoreModule(unittest.TestCase):
 
         self.test_system.add_asset(self.test_asset)
 
-        self.assertEqual(self.test_asset, self.test_system._assets[0])
+        self.assertEqual(self.test_asset, self.test_system._assets.assets[0])
 
     def test_add_process(self):
         pass
