@@ -2,8 +2,8 @@ import unittest
 import logging
 import random
 
-from GridPi import Core
-from Models import Models
+from GridPi import gridpi_core
+from Models import model_core
 from Persistence import Persistence
 from configparser import ConfigParser
 
@@ -12,7 +12,7 @@ class TestStorageClass(unittest.TestCase):
     def setUp(self):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)  # configure logging
 
-        self.gp = Core.System()
+        self.gp = gridpi_core.System()
 
         # configure asset models
         parser = ConfigParser()
@@ -26,7 +26,7 @@ class TestStorageClass(unittest.TestCase):
                                    {'class_name': 'VirtualGridIntertie',
                                     'name': 'grid'}})
 
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
             self.gp.add_asset(asset_factory.factory(parser[cfg]))
         del asset_factory

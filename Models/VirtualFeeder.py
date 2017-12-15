@@ -4,7 +4,7 @@ import asyncio
 import random
 
 from Models import StateMachine
-from Models.Models import Feeder
+from Models.model_core import Feeder
 
 
 class VirtualFeeder(Feeder):
@@ -18,7 +18,7 @@ class VirtualFeeder(Feeder):
             'breaker_trip': False
         })
 
-        self.internal_ctrl.update({
+        self.internal_control.update({
             'close_breaker': False,
             'open_breaker': False
         })
@@ -51,11 +51,11 @@ class VirtualFeeder(Feeder):
             2. Write the communications interface from internal control dictionary.
         """
         """ MAP TO INTERNAL HERE """
-        self.internal_ctrl['close_breaker'] = self.ctrl['run']
-        self.internal_ctrl['open_breaker'] = not self.ctrl['run']
+        self.internal_control['close_breaker'] = self.control['run']
+        self.internal_control['open_breaker'] = not self.control['run']
 
         """ WRITE COMM INTERFACE """
-        await self.comm_interface.write(self.internal_ctrl)
+        await self.comm_interface.write(self.internal_control)
 
 class VFDevice(StateMachine.StateMachine):
     def __init__(self):
@@ -83,10 +83,10 @@ class VFDevice(StateMachine.StateMachine):
         for key in internal_status.keys():
             internal_status[key] = self.__dict__[key]
 
-    async def write(self, internal_ctrl):
+    async def write(self, internal_control):
         """ Write internal_ctrl values to state_machine_input class dict keys
         """
-        for key, val in internal_ctrl.items():
+        for key, val in internal_control.items():
             self.__dict__[key] = val
 
         self.deviceUpdate()

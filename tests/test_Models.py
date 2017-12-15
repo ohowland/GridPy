@@ -4,7 +4,7 @@ import unittest
 import logging
 import asyncio
 
-from Models import Models
+from Models import model_core
 from Models import VirtualEnergyStorage
 from Models import VirtualFeeder
 from Models import VirtualGridIntertie
@@ -34,7 +34,7 @@ class TestModelModule(unittest.TestCase):
 
     def test_asset_factory(self):
         logging.debug('********** Test Models asset factory **********')
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
 
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])
         self.assertIsInstance(self.test_asset, VirtualEnergyStorage.VirtualEnergyStorage)
@@ -47,20 +47,20 @@ class TestModelModule(unittest.TestCase):
 
     def test_VES_state_machine(self):
         logging.debug('********** Test VirtualEnergyStorage state machine **********')
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])
         self.loop.run_until_complete(self.test_asset.update_status())
 
         kw_setpoint = 50.0
-        self.test_asset.ctrl['run'] = True
-        self.test_asset.ctrl['kw_setpoint'] = kw_setpoint
+        self.test_asset.control['run'] = True
+        self.test_asset.control['kw_setpoint'] = kw_setpoint
         self.loop.run_until_complete(self.test_asset.update_control())
         self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], True)
         self.assertEqual(self.test_asset.status['kw'], kw_setpoint)
 
-        self.test_asset.ctrl['run'] = False
+        self.test_asset.control['run'] = False
         self.loop.run_until_complete(self.test_asset.update_control())
         self.loop.run_until_complete(self.test_asset.update_status())
 
@@ -69,11 +69,11 @@ class TestModelModule(unittest.TestCase):
 
     def test_VES_state_machine_soc_tracking(self):
         logging.debug('********** Test VirtualEnergyStorage soc tracking **********')
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])  # Virtual Energy Persistence
 
-        self.test_asset.ctrl['run'] = True
-        self.test_asset.ctrl['kw_setpoint'] = 50.0
+        self.test_asset.control['run'] = True
+        self.test_asset.control['kw_setpoint'] = 50.0
         self.loop.run_until_complete(self.test_asset.update_status())
         self.loop.run_until_complete(self.test_asset.update_control())
 
@@ -85,53 +85,54 @@ class TestModelModule(unittest.TestCase):
 
     def test_VF_state_machine(self):
         logging.debug('********** Test VirtualFeeder state machine **********')
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['FEEDER'])  # Virtual Feeder
         self.loop.run_until_complete(self.test_asset.update_status())
 
-        self.test_asset.ctrl['run'] = True
+        self.test_asset.control['run'] = True
         self.loop.run_until_complete(self.test_asset.update_control())
         self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], True)
 
-        self.test_asset.ctrl['run'] = False
+        self.test_asset.control['run'] = False
         self.loop.run_until_complete(self.test_asset.update_status())
         self.loop.run_until_complete(self.test_asset.update_control())
 
     def test_VGI_state_machine(self):
         logging.debug('********** Test VirtualGridIntertie state machine **********')
 
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['GRID_INTERTIE'])  # Virtual GridIntertie
         self.loop.run_until_complete(self.test_asset.update_status())
 
-        self.test_asset.ctrl['run'] = True
+        self.test_asset.control['run'] = True
         self.loop.run_until_complete(self.test_asset.update_control())
         self.loop.run_until_complete(self.test_asset.update_status())
 
         self.assertEqual(self.test_asset.status['online'], True)
 
-        self.test_asset.ctrl['run'] = False
+        self.test_asset.control['run'] = False
         self.loop.run_until_complete(self.test_asset.update_status())
         self.loop.run_until_complete(self.test_asset.update_control())
 
 
     def test_read_asset_container(self):
         logging.debug('********** Test read_asset_container **********')
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         self.test_asset = asset_factory.factory(self.parser['ENERGY_STORAGE'])
 
         self.test_asset.status['soc'] = 0.5
         self.test_asset.config['target_soc'] = 0.6
 
-        self.AC = Models.AssetContainer()
+        self.AC = model_core.AssetContainer()
         self.AC.add_asset(self.test_asset)
 
-        search_param1 = 'inverter_soc'
-        search_param2 = 'inverter_target_soc'
+        search_param1 = ('inverter', 'status', 'soc')
+        search_param2 = ('inverter', 'config', 'target_soc')
 
-        resp = self.AC.read({search_param1: 0, search_param2: 0})
+        resp = self.AC.read({search_param1: 0,
+                             search_param2: 0})
 
         self.assertEqual(resp[search_param1], 0.5)
         self.assertEqual(resp[search_param2], 0.6)

@@ -5,7 +5,7 @@ import asyncio
 
 from Models import StateMachine
 
-from Models.Models import EnergyStorage
+from Models.model_core import EnergyStorage
 
 class VirtualEnergyStorage(EnergyStorage):
 
@@ -18,7 +18,7 @@ class VirtualEnergyStorage(EnergyStorage):
             'soc': 0.0
         })
 
-        self.internal_ctrl.update({
+        self.internal_control.update({
             'kw_setpoint': 0.0,
             'run_cmd': False
         })
@@ -50,11 +50,11 @@ class VirtualEnergyStorage(EnergyStorage):
             2. Write the communications interface from internal control dictionary.
         """
         """ MAP from ARCHETYPE to INTERNAL """
-        self.internal_ctrl['kw_setpoint'] = self.ctrl['kw_setpoint']
-        self.internal_ctrl['run_cmd'] = self.ctrl['run']
+        self.internal_control['kw_setpoint'] = self.control['kw_setpoint']
+        self.internal_control['run_cmd'] = self.control['run']
 
         """ WRITE COMM INTERFACE """
-        await self.comm_interface.write(self.internal_ctrl)
+        await self.comm_interface.write(self.internal_control)
 
 
 class VESDevice(StateMachine.StateMachine):
@@ -84,10 +84,10 @@ class VESDevice(StateMachine.StateMachine):
         for key in internal_status.keys():
             internal_status[key] = self.__dict__[key]
 
-    async def write(self, internal_ctrl):
+    async def write(self, internal_control):
         """ Write internal_ctrl values to state_machine_input class dict keys
         """
-        for key, val in internal_ctrl.items():
+        for key, val in internal_control.items():
             self.__dict__[key] = val
 
         self.deviceUpdate()

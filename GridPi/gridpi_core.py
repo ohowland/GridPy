@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
-import statemachine
-from Models import Models
-from Process import Process
 
+from Models import model_core
+from Process import process_core
+
+class StateMachine(object):
+    def run(self):
+        pass
 
 class System(object):
     """System object holds all data that defines a a system process loop.
@@ -11,9 +14,9 @@ class System(object):
            self._modules: Dispatch process modules, either control and analytic, these modules manipulate tagbus data
     """
     def __init__(self):
-        self._assets = Models.AssetContainer()
-        self._process = Process.ProcessContainer()
-        self._state_machine = statemachine.StateMachine()
+        self._assets = model_core.AssetContainer()
+        self._process = process_core.ProcessContainer()
+        self._state_machine = StateMachine()
 
     @property
     def assets(self):

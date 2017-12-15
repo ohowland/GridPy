@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import Core
-from Models import Models
-from Process import Process
+from Models import model_core
+from Process import process_core
 from Persistence import Persistence
 from datetime import datetime
 
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     # read asset config.ini
     parser = ConfigParser()
     parser.read(bootstrap_parser['BOOTSTRAP']['asset_cfg_local_path'])
-    asset_factory = Models.AssetFactory()  # Create Asset Factory object
+    asset_factory = model_core.AssetFactory()  # Create Asset Factory object
     for cfg in parser.sections():
         gp.add_asset(asset_factory.factory(parser[cfg]))
     del asset_factory
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     # read process config.ini
     parser.clear()
     parser.read(bootstrap_parser['BOOTSTRAP']['process_cfg_local_path'])
-    process_factory = Process.ProcessFactory()
+    process_factory = process_core.ProcessFactory()
     for cfg in parser.sections():
         gp.add_process(process_factory.factory(parser[cfg]))
     del process_factory

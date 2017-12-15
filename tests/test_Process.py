@@ -5,15 +5,15 @@ import logging
 import asyncio
 from configparser import ConfigParser
 
-from Models import Models
-from GridPi import Core
-from Process import Process
-from Process import GraphProcess
+from Models import model_core
+from GridPi import gridpi_core
+from Process import process_core
+from Process import process_graph
 
 class TestProcessModule(unittest.TestCase):
     def setUp(self):
         "Setup for Process Module Testing"
-        self.test_system = Core.System()  # Create System container object
+        self.test_system = gridpi_core.System()  # Create System container object
 
         # configure asset models
         self.parser = ConfigParser()
@@ -27,7 +27,7 @@ class TestProcessModule(unittest.TestCase):
                                    {'class_name': 'VirtualGridIntertie',
                                     'name': 'grid'}})
 
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
             self.test_system.add_asset(asset_factory.factory(self.parser[cfg]))
         del asset_factory
@@ -42,7 +42,7 @@ class TestProcessModule(unittest.TestCase):
                                              'grid_kw_import_limit': 20,
                                              'grid_kw_export_limit': 20},
                                'process_5': {'class_name': 'EssWriteControl'}})
-        process_factory = Process.ProcessFactory()
+        process_factory = process_core.ProcessFactory()
         for cfg in self.parser.sections():
             self.test_system.add_process(process_factory.factory(self.parser[cfg]))
         del process_factory
@@ -59,13 +59,13 @@ class TestProcessModule(unittest.TestCase):
 
         self.parser.clear()
         self.parser.read_dict({'test_process': {'class_name': 'EssSocPowerController',
-                                                'inverter_target_soc': 0.6}})
+                                                'some_special_attribute': 0.6}})
 
-        PF = Process.ProcessFactory()
+        PF = process_core.ProcessFactory()
         test_class = PF.factory(self.parser['test_process'])
 
-        self.assertIsInstance(test_class, Process.EssSocPowerController)
-        self.assertEqual(test_class.config['inverter_target_soc'], 0.6)
+        self.assertIsInstance(test_class, process_core.EssSocPowerController)
+        #self.assertEqual(test_class.config['some_special_attribute'], 0.6)
 
     def test_tag_aggregation(self):
         ''' Test the tag aggregation class constructor aggregates two classes with similar outputs
@@ -88,18 +88,18 @@ class TestProcessModule(unittest.TestCase):
             "target_grid_intertie": 'grid'
         }
 
-        inv_soc_pwr_ctrl = Process.EssSocPowerController(inv_soc_pwr_ctrl_config)
-        inv_dmdlmt_pwr_ctrl = Process.EssDemandLimitPowerController(inv_dmdlmt_pwr_ctrl_config)
+        inv_soc_pwr_ctrl = process_core.EssSocPowerController(inv_soc_pwr_ctrl_config)
+        inv_dmdlmt_pwr_ctrl = process_core.EssDemandLimitPowerController(inv_dmdlmt_pwr_ctrl_config)
 
         process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
-        inv_pwr_ctrl_agg = Process.AggregateProcessSummation(process_list)
+        inv_pwr_ctrl_agg = process_core.AggregateProcessSummation(process_list)
 
         # Aggregate object is created
-        self.assertIsInstance(inv_pwr_ctrl_agg, Process.AggregateProcess)
+        self.assertIsInstance(inv_pwr_ctrl_agg, process_core.AggregateProcess)
 
         # Aggregate object composed of given objects
-        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], Process.EssSocPowerController)
-        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], Process.EssDemandLimitPowerController)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], process_core.EssSocPowerController)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], process_core.EssDemandLimitPowerController)
 
     def test_process(self):
         logging.debug('********** Test Process: test_process **********')
@@ -116,7 +116,7 @@ class TestProcessModule(unittest.TestCase):
         tasks = asyncio.gather(*[x.update_control() for x in self.test_system.assets.assets])
         self.loop.run_until_complete(tasks)
 
-        search_param = 'inverter_soc'
+        search_param = ('inverter', 'status', 'soc')
         resp = self.test_system.assets.read({search_param: 1})
 
         self.assertGreater(resp[search_param], 0.0)
@@ -127,7 +127,7 @@ class TestProcessModule(unittest.TestCase):
 
 class TestGraphProcess(unittest.TestCase):
     def setUp(self):
-        self.test_system = Core.System()  # Create System container object
+        self.test_system = gridpi_core.System()  # Create System container object
 
         # configure processes
         parser = ConfigParser()
@@ -139,14 +139,14 @@ class TestGraphProcess(unittest.TestCase):
                                              'grid_kw_import_limit': 20,
                                              'grid_kw_export_limit': 20},
                                'process_5': {'class_name': 'EssWriteControl'}})
-        process_factory = Process.ProcessFactory()
+        process_factory = process_core.ProcessFactory()
         for cfg in parser.sections():
             self.test_system.add_process(process_factory.factory(parser[cfg]))
         del process_factory
 
     def test_Edgenode_constructor(self):
-        node1 = GraphProcess.Edgenode()
-        node2 = GraphProcess.Edgenode()
+        node1 = process_graph.Edgenode()
+        node2 = process_graph.Edgenode()
 
         node1.name = 'first_node'
         node2.name = 'second_node'

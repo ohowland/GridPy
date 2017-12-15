@@ -48,13 +48,12 @@ class AssetContainer(object):
         self._grid = list()
         self._feeder = list()
 
-        self.tag_expression = compile('^([a-z A-Z 0-9]+)_([\w]+)')
-
     def add_asset(self, asset_obj):
 
         self._assets.append(asset_obj)
         self._asset_dict.update({asset_obj.config['name']: asset_obj})
 
+        # TODO: Remove these lists, pending review.
         if asset_obj.config['class_type'] == 'ess':
             self._ess.append(asset_obj)
         elif asset_obj.config['class_type'] == 'grid':
@@ -62,37 +61,24 @@ class AssetContainer(object):
         elif asset_obj.config['class_type'] == 'feeder':
             self._feeder.append(asset_obj)
 
-    def read(self, input_dict):
-        resp = {}
-        for tag in input_dict.keys():
-            re = self.tag_expression.match(tag)
-            obj_name = re.group(1)
-            param_name = re.group(2)
-
-            ''' look for param in Status dict'''
+    def read(self, args):
+        resp = dict()
+        for asset_name, type_name, param_name in args:
             try:
-                resp.update({tag: self._asset_dict[obj_name].status[param_name]})
-                continue
+                resp.update({(asset_name, type_name, param_name):
+                                 getattr(self._asset_dict[asset_name], type_name)[param_name]})
             except KeyError:
-                pass
-
-            ''' if param not foind in Status dict, check Config dict'''
-            try:
-                resp.update({tag: self._asset_dict[obj_name].config[param_name]})
-            except KeyError:
-                logging.warning('Class %s: Unable to locate: %s', self.__name__, tag)
+                logging.warning('%s: read(): %s does not exists',
+                                self.__class__.__name__, (asset_name, type_name, param_name))
         return resp
 
-    def write(self, input_dict):
-        for tag, val in input_dict.items():
-            re = self.tag_expression.match(tag)
-            obj_name = re.group(1)
-            param_name = re.group(2)
-
+    def write(self, args):
+        for key, val in args.items():
             try:
-                self._asset_dict[obj_name].ctrl[param_name] = val
+                asset_name, type_name, param_name = key
+                getattr(self._asset_dict[asset_name], type_name)[param_name] = val
             except KeyError:
-                logging.warning('Class %s: Unable to locate: %s', self.__name__, tag)
+                logging.warning('%s: write(): %s does not exists', self.__class__.__name__, key)
 
     @property
     def assets(self):
@@ -120,7 +106,7 @@ class Asset(object):
         # Asset Configuration:
         self.config = dict()
         self.status = dict()
-        self.ctrl = dict()
+        self.control = dict()
         self.comm_interface = None  # Communications Interface Object
 
         self.config.update({
@@ -188,7 +174,7 @@ class CtrlAsset(Asset):
         super(CtrlAsset, self).__init__()
 
         self.internal_status = dict()  # Device Status Registers
-        self.internal_ctrl = dict()    # Device Control Registers
+        self.internal_control = dict()    # Device Control Registers
         self.internal_config = dict()  # Device Configuration Registers
 
         # CtrlAsset Configuration
@@ -201,7 +187,7 @@ class CtrlAsset(Asset):
         })
 
         # CtrlAsset Control
-        self.ctrl.update({
+        self.control.update({
             'enable' : False,
             'run' : False,
             'clear_faults' : False
@@ -219,10 +205,14 @@ class CtrlAsset(Asset):
 
 class GridIntertie(CtrlAsset):
     """Grid intertie archetype object
-
     """
     def __init__(self):
         super(GridIntertie, self).__init__()
+
+        self.config.update({
+            'kw_export_limit': 0.0,
+            'kw_import_limit': 0.0
+        })
 
     def update(self):
         super(GridIntertie, self).update_status()
@@ -230,14 +220,13 @@ class GridIntertie(CtrlAsset):
 
 class EnergyStorage(CtrlAsset):
     """Energy Persistence archetype object
-
     """
     def __init__(self):
         super(EnergyStorage, self).__init__()
         self.status.update({
             'soc': 0.0,
         })
-        self.ctrl.update({
+        self.control.update({
             'kw_setpoint': 0.0
         })
 
@@ -251,7 +240,6 @@ class EnergyStorage(CtrlAsset):
 
 class Feeder(CtrlAsset):
     """Feeder archetype object
-
     """
     def __init__(self):
         super(Feeder, self).__init__()

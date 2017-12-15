@@ -5,7 +5,7 @@
 """
 
 import logging
-from Process import Process
+from Process import process_core
 
 
 class Edgenode(object):
@@ -196,7 +196,7 @@ class GraphDependencies(object):
 
                 """ An aggregate object is created whihc holds the processes that combine the same output
                 The output of the aggregate object is the output of the processes it contains"""
-                agg_process = Process.AggregateProcessSummation(process_list)
+                agg_process = process_core.AggregateProcess(process_list)
                 process_dict.update({agg_process.name: agg_process})  # Update the process dictionary with agg process
 
                 for process in process_list:

@@ -3,9 +3,9 @@ import logging
 import asyncio
 import time
 
-from GridPi import Core
-from Models import Models
-from Process import Process
+from GridPi import gridpi_core
+from Models import model_core
+from Process import process_core
 from Persistence import Persistence
 from configparser import ConfigParser
 
@@ -15,7 +15,7 @@ class TestGridPi(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)  # configure logging
-        self.gp = Core.System()
+        self.gp = gridpi_core.System()
 
         # configure asset models
         parser = ConfigParser()
@@ -32,7 +32,7 @@ class TestGridPi(unittest.TestCase):
                                     'class_type': 'grid',
                                     'name': 'grid'}})
 
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         for cfg in parser.sections():  # Add Models to System, The asset factory acts on a configuration
             self.gp.add_asset(asset_factory.factory(parser[cfg]))
         del asset_factory
@@ -47,7 +47,7 @@ class TestGridPi(unittest.TestCase):
                                              'grid_kw_import_limit': 20,
                                              'grid_kw_export_limit': 20},
                                'process_5': {'class_name': 'EssWriteControl'}})
-        process_factory = Process.ProcessFactory()
+        process_factory = process_core.ProcessFactory()
         for cfg in parser.sections():
             self.gp.add_process(process_factory.factory(parser[cfg]))
         del process_factory

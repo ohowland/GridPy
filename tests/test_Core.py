@@ -1,5 +1,5 @@
-from GridPi import Core
-from Models import Models
+from GridPi import gridpi_core
+from Models import model_core
 
 import unittest
 import logging
@@ -9,7 +9,7 @@ class TestCoreModule(unittest.TestCase):
 
     def setUp(self):
 
-        self.test_system = Core.System()
+        self.test_system = gridpi_core.System()
 
     def test_add_asset(self):
 
@@ -18,7 +18,7 @@ class TestCoreModule(unittest.TestCase):
                                    {'class_name': 'VirtualFeeder',
                                     'name': 'test'}})
 
-        asset_factory = Models.AssetFactory()  # Create Asset Factory object
+        asset_factory = model_core.AssetFactory()  # Create Asset Factory object
         for cfg in self.parser.sections():  # Add Models to System, The asset factory acts on a configuration
             self.test_asset = (asset_factory.factory(self.parser[cfg]))
         del asset_factory
