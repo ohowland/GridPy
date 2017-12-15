@@ -6,7 +6,7 @@ import time
 from GridPi import gridpi_core
 from Models import model_core
 from Process import process_core
-from Persistence import Persistence
+from Persistence import persistence_core
 from configparser import ConfigParser
 
 import unittest

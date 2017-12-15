@@ -4,7 +4,7 @@ import random
 
 from GridPi import gridpi_core
 from Models import model_core
-from Persistence import Persistence
+from Persistence import persistence_core
 from configparser import ConfigParser
 
 class TestStorageClass(unittest.TestCase):
@@ -37,7 +37,7 @@ class TestStorageClass(unittest.TestCase):
                               {'class_name': 'DBSQLite3',
                                'local_path': '/database/GridPi.sqlite',
                                'empty_database_on_start': 1}})
-        persistence_factory = Persistence.PersistenceFactory()
+        persistence_factory = persistence_core.PersistenceFactory()
         for cfg in parser.sections():
             self.db = persistence_factory.factory(parser[cfg])
         del persistence_factory

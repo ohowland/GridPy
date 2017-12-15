@@ -3,7 +3,7 @@ import time
 import random
 import asyncio
 
-from Models import StateMachine
+from Models import model_statemachine
 
 from Models.model_core import EnergyStorage
 
@@ -57,7 +57,7 @@ class VirtualEnergyStorage(EnergyStorage):
         await self.comm_interface.write(self.internal_control)
 
 
-class VESDevice(StateMachine.StateMachine):
+class VESDevice(model_statemachine.StateMachine):
     def __init__(self):
 
         # Keep the persistent information about the device here.
@@ -70,7 +70,7 @@ class VESDevice(StateMachine.StateMachine):
         self.kw_setpoint = 0
         self.looptime = time.time()
 
-        StateMachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
+        model_statemachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
                                            Input(self.__dict__))
 
     async def read(self, internal_status):
@@ -103,7 +103,7 @@ class VESDevice(StateMachine.StateMachine):
         for key, val in sm_output.__dict__.items():
             setattr(self, key, val)
 
-class Initialize(StateMachine.State):
+class Initialize(model_statemachine.State):
     """ Startup state for the VES
     """
     def run(self, sm_input):
@@ -120,7 +120,7 @@ class Initialize(StateMachine.State):
         return state_initialize
 
 
-class Offline(StateMachine.State):
+class Offline(model_statemachine.State):
     """ Offline state for the VES
     """
     def run(self, sm_input):
@@ -146,7 +146,7 @@ class Offline(StateMachine.State):
         return state_offline
 
 
-class Online(StateMachine.State):
+class Online(model_statemachine.State):
     """ Online state for the VES
     """
     def run(self, sm_input):

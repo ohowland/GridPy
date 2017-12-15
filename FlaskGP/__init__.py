@@ -1,1 +1,0 @@
-from .FlaskGP import app

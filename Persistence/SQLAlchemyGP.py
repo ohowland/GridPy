@@ -41,7 +41,7 @@ class SQLAlchemyGP(DBInterface):
     def __init__(self, configparser):
         super(SQLAlchemyGP, self).__init__(configparser)
 
-        self.engine = create_engine('sqlite:///GridPi.sqlite')
+        self.engine = create_engine('sqlite:///gridpi.sqlite')
         Base.metadata.create_all(self.engine)
 
         self.session = Session(bind=self.engine)

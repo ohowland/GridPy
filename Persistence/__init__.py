@@ -1,1 +1,1 @@
-from .Persistence import DBInterface
+from .persistence_core import DBInterface

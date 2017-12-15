@@ -3,7 +3,7 @@ import time
 import asyncio
 import random
 
-from Models import StateMachine
+from Models import model_statemachine
 from Models.model_core import Feeder
 
 
@@ -57,7 +57,7 @@ class VirtualFeeder(Feeder):
         """ WRITE COMM INTERFACE """
         await self.comm_interface.write(self.internal_control)
 
-class VFDevice(StateMachine.StateMachine):
+class VFDevice(model_statemachine.StateMachine):
     def __init__(self):
 
         # Keep the persistent information about the device here.
@@ -70,7 +70,7 @@ class VFDevice(StateMachine.StateMachine):
         self.initialized = False
         self.looptime = time.time()
 
-        StateMachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
+        model_statemachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
                                            Input(self.__dict__))
 
     async def read(self, internal_status):
@@ -102,7 +102,7 @@ class VFDevice(StateMachine.StateMachine):
         for key, val in sm_output.__dict__.items():
             setattr(self, key, val)
 
-class Initialize(StateMachine.State):
+class Initialize(model_statemachine.State):
     """ Startup state for the VES
     """
     def run(self, sm_input):
@@ -126,7 +126,7 @@ class Initialize(StateMachine.State):
         return state_initialize
 
 
-class BreakerTripped(StateMachine.State):
+class BreakerTripped(model_statemachine.State):
     """ Startup state for the VES
     """
     def run(self, sm_input):
@@ -148,7 +148,7 @@ class BreakerTripped(StateMachine.State):
         return state_tripped
 
 
-class BreakerOpen(StateMachine.State):
+class BreakerOpen(model_statemachine.State):
     """ Offline state for the VES
     """
     def run(self, sm_input):
@@ -173,7 +173,7 @@ class BreakerOpen(StateMachine.State):
         return state_open
 
 
-class BreakerClosed(StateMachine.State):
+class BreakerClosed(model_statemachine.State):
     """ Online state for the VES
     """
     def run(self, sm_input):

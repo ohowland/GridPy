@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import Core
+import gridpi_core
 from Models import model_core
 from Process import process_core
-from Persistence import Persistence
+from Persistence import persistence_core
 from datetime import datetime
 
 import logging
@@ -93,7 +93,7 @@ if __name__ == '__main__':
         Create the system object. Load system assets, modules, and tagbus. Register the parameters of each asset with the
         tagbus object.
     """
-    gp = Core.System()  # Create System container object
+    gp = gridpi_core.System()  # Create System container object
 
     # Read system configuration
     bootstrap_parser = ConfigParser()
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     # read persistent storage config.ini
     parser.clear()
     parser.read(bootstrap_parser['BOOTSTRAP']['persistence_cfg_local_path'])
-    persistence_factory = Persistence.PersistenceFactory()
+    persistence_factory = persistence_core.PersistenceFactory()
     for cfg in parser.sections():
         db = persistence_factory.factory(parser[cfg])
     del persistence_factory

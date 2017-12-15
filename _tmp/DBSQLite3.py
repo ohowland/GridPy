@@ -1,4 +1,4 @@
-from Persistence import Persistence
+from Persistence import persistence_core
 
 import sqlite3
 import logging
@@ -16,7 +16,7 @@ def sqlite_default_value(field_type):
         raise ValueError("field type '{ft}' not recognized".format(ft=field_type))
 
 
-class DBSQLite3(Persistence.DBInterface):
+class DBSQLite3(persistence_core.DBInterface):
     """ SQLite3 DB interface for GridPi"""
     def __init__(self, config):
         super(DBSQLite3, self).__init__()
