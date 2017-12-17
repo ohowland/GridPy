@@ -7,7 +7,7 @@ from configparser import ConfigParser
 
 from GridPi.lib import gridpi_core
 from GridPi.lib.models import model_core
-from GridPi.lib.process import process_core, process_graph
+from GridPi.lib.process import process_core, process_graph, process_plugins
 
 class TestProcessModule(unittest.TestCase):
     def setUp(self):
@@ -63,7 +63,7 @@ class TestProcessModule(unittest.TestCase):
         PF = process_core.ProcessFactory()
         test_class = PF.factory(self.parser['test_process'])
 
-        self.assertIsInstance(test_class, process_core.EssSocPowerController)
+        self.assertIsInstance(test_class, process_plugins.EssSocPowerController)
         #self.assertEqual(test_class.config['some_special_attribute'], 0.6)
 
     def test_tag_aggregation(self):
@@ -87,18 +87,18 @@ class TestProcessModule(unittest.TestCase):
             "target_grid_intertie": 'grid'
         }
 
-        inv_soc_pwr_ctrl = process_core.EssSocPowerController(inv_soc_pwr_ctrl_config)
-        inv_dmdlmt_pwr_ctrl = process_core.EssDemandLimitPowerController(inv_dmdlmt_pwr_ctrl_config)
+        inv_soc_pwr_ctrl = process_plugins.EssSocPowerController(inv_soc_pwr_ctrl_config)
+        inv_dmdlmt_pwr_ctrl = process_plugins.EssDemandLimitPowerController(inv_dmdlmt_pwr_ctrl_config)
 
         process_list = [inv_soc_pwr_ctrl, inv_dmdlmt_pwr_ctrl]
-        inv_pwr_ctrl_agg = process_core.AggregateProcessSummation(process_list)
+        inv_pwr_ctrl_agg = process_plugins.AggregateProcessSummation(process_list)
 
         # Aggregate object is created
         self.assertIsInstance(inv_pwr_ctrl_agg, process_core.AggregateProcess)
 
         # Aggregate object composed of given objects
-        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], process_core.EssSocPowerController)
-        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], process_core.EssDemandLimitPowerController)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[0], process_plugins.EssSocPowerController)
+        self.assertIsInstance(inv_pwr_ctrl_agg._process_list[1], process_plugins.EssDemandLimitPowerController)
 
     def test_process(self):
         logging.debug('********** Test process: test_process **********')
@@ -110,15 +110,16 @@ class TestProcessModule(unittest.TestCase):
             tasks = asyncio.gather(*[x.update_status() for x in self.test_system.assets.assets])
             self.loop.run_until_complete(tasks)
 
-        self.test_system.run_processes()
+            self.test_system.run_processes()
 
-        tasks = asyncio.gather(*[x.update_control() for x in self.test_system.assets.assets])
-        self.loop.run_until_complete(tasks)
+            tasks = asyncio.gather(*[x.update_control() for x in self.test_system.assets.assets])
+            self.loop.run_until_complete(tasks)
 
-        search_param = ('inverter', 'status', 'soc')
-        resp = self.test_system.assets.read({search_param: 1})
+        search_param = ('ess', 0, 'status', 'soc')
+        resp = self.test_system.assets.get_asset(search_param[0])
 
-        self.assertGreater(resp[search_param], 0.0)
+        print('HI', getattr(resp[0], search_param[2]))
+        self.assertGreater(getattr(resp[0], search_param[2])[search_param[3]], 0.0)
 
     def test_GraphDependencies_sort(self):
         logging.debug('********** Test process: test_graph_dependencies **********')
