@@ -118,12 +118,13 @@ class TestProcessModule(unittest.TestCase):
         search_param = ('ess', 0, 'status', 'soc')
         resp = self.test_system.assets.get_asset(search_param[0])
 
-        print('HI', getattr(resp[0], search_param[2]))
         self.assertGreater(getattr(resp[0], search_param[2])[search_param[3]], 0.0)
 
     def test_GraphDependencies_sort(self):
         logging.debug('********** Test process: test_graph_dependencies **********')
         self.test_system.process.sort()
+
+
 
 class TestGraphProcess(unittest.TestCase):
     def setUp(self):
