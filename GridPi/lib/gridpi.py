@@ -1,46 +1,48 @@
 #!/usr/bin/env python3
 
 import asyncio
-import logging
 from configparser import ConfigParser
 from datetime import datetime
 from collections import namedtuple
 
 from GridPi.lib import gridpi_core
-from GridPi.lib.models import model_core
+from GridPi.lib.models import model_core, virtual_system
 from GridPi.lib.persistence import persistence_core
 from GridPi.lib.process import process_core
+
 
 async def update_assets_loop(system, poll_rate):
 
     while True:
-        try:
+        #try:
             # Collect updateStatus() method references for each asset and package as coroutine task.
-            print('[{time}] reading assets'.format(time=datetime.now().time()))
+            #print('[{time}] reading assets'.format(time=datetime.now().time()))
             await asyncio.gather(*[asset.update_status() for asset in system.asset_container.asset_list])
 
             # Run calculate status processes
-            print('[{time}] run process'.format(time=datetime.now().time()))
+            #print('[{time}] run process'.format(time=datetime.now().time()))
             system.run_processes()
 
             # Run the state macine
-            print('[{time}] run state machine'.format(time=datetime.now().time()))
+            #print('[{time}] run state machine'.format(time=datetime.now().time()))
             system.run_state_machine()
-            print('[{time}] current state {state}'.format(time=datetime.now().time(),
-                                                          state=system.state_machine.current_state.name))
+            print('[{time}] Current state: ({state}); Requesting: ({req_state})'.\
+                  format(time=datetime.now().time(),
+                         state=system.state_machine.current_state.name,
+                         req_state=system.state_machine.requested_state.name))
 
             # Collect updateWrite() method references for each asset and package as coroutine task.
-            print('[{time}] writing assets'.format(time=datetime.now().time()))
+            #print('[{time}] writing assets'.format(time=datetime.now().time()))
             await asyncio.gather(*[asset.update_control() for asset in system.asset_container.asset_list])
             await asyncio.sleep(poll_rate)
 
-        except Exception as e:
-            print(e, "*** Unrecoverable error, shutting down... ***")
-            pending = asyncio.Task.all_tasks()
-            for task in pending:
-                task.cancel()
-            asyncio.get_event_loop().stop()
-            break
+        #except Exception as e:
+            #print(e, "*** Unrecoverable error, shutting down... ***")
+            #pending = asyncio.Task.all_tasks()
+            #for task in pending:
+                #task.cancel()
+            #asyncio.get_event_loop().stop()
+            #break
 
 
 async def update_persistent_storage(system, database, poll_rate):
@@ -53,22 +55,25 @@ async def update_persistent_storage(system, database, poll_rate):
     for asset in system.asset_container.asset_list:
         database.add_asset(asset.config['class_type'])
         database.add_asset_params(asset.config['class_type'], 0, list(asset.status.keys()))
-        database.add_asset_params(asset.config['class_type'], 1, list(asset.control.keys()))
+        database.add_asset_params(asset.config['class_type'], 0, list(asset.control.keys()))
+        database.add_asset_params(asset.config['class_type'], 1, list(asset.remote_control.keys()))
 
         """payload: dict(AssetName: dict{param_name_1: value_1, ..., param_name_n, value_n}} """
         status_payload.update({asset.config['class_type']: dict()})
         status_payload[asset.config['class_type']].update(asset.status.items())
+        status_payload[asset.config['class_type']].update(asset.control.items())
 
         ctrl_payload.update({asset.config['class_type']: dict()})
-        ctrl_payload[asset.config['class_type']].update(asset.control.items())
+        ctrl_payload[asset.config['class_type']].update(asset.remote_control.items())
 
     while True:
         try:
-            print('[{time}] connecting to database'.format(time=datetime.now().time()))
+            #print('[{time}] connecting to database'.format(time=datetime.now().time()))
 
             """ Write database with Asset status information """
             for asset in system.asset_container.asset_list:
                 status_payload[asset.config['class_type']].update(asset.status.items())
+                status_payload[asset.config['class_type']].update(asset.control.items())
                 database.write_param(payload=status_payload)
 
             """ Read Asset control information from database """
@@ -77,13 +82,24 @@ async def update_persistent_storage(system, database, poll_rate):
             for asset, params in payload.items():
                 local_asset = system.asset_container.get_asset(asset)[0]
                 for param, val in params.items():
-                    local_asset.control[param] = val
+                    local_asset.remote_control[param] = val
 
-            print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
+            #print('[{time}] disconnecting from database'.format(time=datetime.now().time()))
             await asyncio.sleep(poll_rate)
         except Exception as e:
             print('GP Database Loop Error: {error}'.format(error=e))
             break
+
+
+async def update_virtual_system(virtual_system):
+    while True:
+        try:
+            virtual_system.run()
+            await asyncio.sleep(.20)
+        except Exception as e:
+            print('Virtual system loop error: {error}'.format(error=e))
+            break
+
 
 def main(*args, **kwargs):
     """ Initalize System object.
@@ -91,7 +107,7 @@ def main(*args, **kwargs):
         tagbus object.
     """
     gp = gridpi_core.System()  # Create System container object
-
+    vs = virtual_system.Virtual_System(gp.state_machine, gp.asset_container)  # virtual system for testing
 
     # read asset config.ini
     bootstrap_parser = kwargs['bootstrap']
@@ -99,7 +115,7 @@ def main(*args, **kwargs):
     parser.read(bootstrap_parser['BOOTSTRAP']['asset_cfg_local_path'])
     asset_factory = model_core.AssetFactory()  # Create Asset Factory object
     for cfg in parser.sections():
-        gp.add_asset(asset_factory.factory(parser[cfg]))
+        gp.add_asset(asset_factory.factory(parser[cfg], virtual_system=vs))
     del asset_factory
 
     # read process config.ini
@@ -124,7 +140,8 @@ def main(*args, **kwargs):
 
     loop = asyncio.get_event_loop()  # Get event loop
     loop.create_task(update_assets_loop(gp, poll_rate=.1))
-    loop.create_task(update_persistent_storage(gp, db, 5))
+    loop.create_task(update_persistent_storage(gp, db, .2))
+    loop.create_task(update_virtual_system(vs))
 
     try:
         loop.run_forever()

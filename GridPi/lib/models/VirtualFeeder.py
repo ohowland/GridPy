@@ -9,7 +9,7 @@ from GridPi.lib.models.model_core import Feeder
 
 class VirtualFeeder(Feeder):
 
-    def __init__(self, config_dict):
+    def __init__(self, config_dict, **kwargs):
         super(VirtualFeeder, self).__init__()
 
         self.internal_status.update({
@@ -23,9 +23,7 @@ class VirtualFeeder(Feeder):
             'open_breaker': False
         })
 
-        self.comm_interface = VFDevice()  # Configure the communications interface (virtual component)
-        # self.internal_config.update({})
-
+        self.comm_interface = VFDevice(**kwargs)  # Configure the communications interface (virtual component)
         self.read_config(config_dict)  # Write parameters in this model that match keys in the dictionary
 
         logging.debug('ASSET INTERFACE: %s constructed', self._config['name'])
@@ -45,20 +43,24 @@ class VirtualFeeder(Feeder):
         self._status['kw'] = self.internal_status['kw']
         self._status['online'] = not self.internal_status['breaker_open']
 
+        super(VirtualFeeder, self).update_status()
+
     async def update_control(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
         """
+        super(VirtualFeeder, self).update_control()
+
         """ MAP TO INTERNAL HERE """
-        self.internal_control['close_breaker'] = self._control['run']
-        self.internal_control['open_breaker'] = not self._control['run']
+        self.internal_control['close_breaker'] = self._control['run'] and self._status['enabled']
+        self.internal_control['open_breaker'] = not self._control['run'] or not self._status['enabled']
 
         """ WRITE COMM INTERFACE """
         await self.comm_interface.write(self.internal_control)
 
 class VFDevice(model_statemachine.StateMachine):
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         # Keep the persistent information about the device here.
         self.kw = 0.0
@@ -69,6 +71,8 @@ class VFDevice(model_statemachine.StateMachine):
 
         self.initialized = False
         self.looptime = time.time()
+
+        self.virtual_system = kwargs['virtual_system']
 
         model_statemachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
                                            Input(self.__dict__))
@@ -89,6 +93,7 @@ class VFDevice(model_statemachine.StateMachine):
         for key, val in internal_control.items():
             self.__dict__[key] = val
 
+        logging.debug('VirtualFeeder.StateMachine.state input: %s', internal_control)
         self.deviceUpdate()
         await asyncio.sleep(random.random())  # FUZZING
         self.looptime = time.time()
@@ -184,7 +189,8 @@ class BreakerClosed(model_statemachine.State):
         setattr(sm_output, 'breaker_open', False)
 
         """ Breaker kW Export """
-        setattr(sm_output, 'kw', 50.0)
+        kw = getattr(sm_input, 'virtual_system').feeder_kw
+        setattr(sm_output, 'kw', kw)  # pull value calculated in virtual system
 
         logging.debug('VirtualFeeder.StateMachine.State output: %s', sm_output.__dict__)
         return sm_output
@@ -195,6 +201,7 @@ class BreakerClosed(model_statemachine.State):
         if not getattr(sm_input, 'close_breaker') and getattr(sm_input, 'open_breaker'):
             return state_open
         return state_closed
+
 
 class Input(object):
     """ Input messaging object for the Virtual Energy persistence State Machine

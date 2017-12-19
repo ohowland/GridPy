@@ -9,7 +9,7 @@ from GridPi.lib.models.model_core import GridIntertie
 
 class VirtualGridIntertie(GridIntertie):
 
-    def __init__(self, config_dict):
+    def __init__(self, config_dict, **kwargs):
         super(VirtualGridIntertie, self).__init__()
 
         self.internal_status.update({
@@ -23,9 +23,7 @@ class VirtualGridIntertie(GridIntertie):
             'open_breaker': False
         })
 
-        self.comm_interface = VGIDevice()  # Configure the communications interface (virtual component)
-        # self.internal_config.update({})
-
+        self.comm_interface = VGIDevice(**kwargs)  # Configure the communications interface (virtual component)
         self.read_config(config_dict)  # Write parameters in this model that match keys in the dictionary
 
         logging.debug('ASSET INTERFACE: %s constructed', self._config['name'])
@@ -45,20 +43,25 @@ class VirtualGridIntertie(GridIntertie):
         self._status['kw'] = self.internal_status['kw']
         self._status['online'] = not self.internal_status['breaker_open']
 
+        super(VirtualGridIntertie, self).update_status()
+
     async def update_control(self):
         """ The update control routine on any asset is as follows:
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
         """
+        super(VirtualGridIntertie, self).update_control()
+
         """ MAP TO INTERNAL HERE """
-        self.internal_control['close_breaker'] = self._control['run']
-        self.internal_control['open_breaker'] = not self._control['run']
+        self.internal_control['close_breaker'] = self._control['run'] and self._status['enabled']
+        self.internal_control['open_breaker'] = not self._control['run'] or not self._status['enabled']
 
         """ WRITE COMM INTERFACE """
         await self.comm_interface.write(self.internal_control)
 
+
 class VGIDevice(model_statemachine.StateMachine):
-    def __init__(self):
+    def __init__(self, **kwargs):
 
         # Keep the persistent information about the device here.
         self.kw = 0.0
@@ -69,6 +72,8 @@ class VGIDevice(model_statemachine.StateMachine):
 
         self.initialized = False
         self.looptime = time.time()
+
+        self.virtual_system = kwargs['virtual_system']
 
         model_statemachine.StateMachine.__init__(self, state_initialize,  # Initialize State Machine
                                            Input(self.__dict__))
@@ -89,6 +94,7 @@ class VGIDevice(model_statemachine.StateMachine):
         for key, val in internal_control.items():
             self.__dict__[key] = val
 
+        logging.debug('VirtualGridIntertie.StateMachine.state input: %s', internal_control)
         self.deviceUpdate()
         await asyncio.sleep(random.random())  # FUZZING
         self.looptime = time.time()
@@ -184,7 +190,8 @@ class BreakerClosed(model_statemachine.State):
         setattr(sm_output, 'breaker_open', False)
 
         """ Breaker kW Export """
-        setattr(sm_output, 'kw', 50.0)
+        kw = getattr(sm_input, 'virtual_system').grid_kw
+        setattr(sm_output, 'kw', kw) # pull value calculated in virtual system
 
         logging.debug('VirtualGridIntertie.StateMachine.State output: %s', sm_output.__dict__)
         return sm_output

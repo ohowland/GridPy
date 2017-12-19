@@ -38,4 +38,4 @@ class System(object):
         self._process_container.run_all(self._asset_container.get_asset)  # 1. passing the get_assets() method only
 
     def run_state_machine(self):
-        self._state_machine.run_all(self._asset_container)      # 2. passing the entire asset_container class
+        self._state_machine.run_all(self._asset_container)  # 2. passing the entire asset_container class

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from enum import Enum
 
 
 def isfloat(x):
@@ -30,7 +31,7 @@ class AssetFactory(object):
         self.module_name = self.__module__.split('.')[0]
         pass
 
-    def factory(self, configparser):
+    def factory(self, configparser, *args, **kwargs):
         """ Factory function for Asset Class objects
 
         :param configparser: Configuration dictonary
@@ -39,7 +40,7 @@ class AssetFactory(object):
         class_type = configparser['class_name']
         new_module = __import__(self.module_name + '.lib.models.' + class_type, fromlist=[type])
         new_class = getattr(new_module, class_type)
-        return new_class(configparser)
+        return new_class(configparser, **kwargs)
 
 
 class AssetContainer(object):
@@ -55,9 +56,10 @@ class AssetContainer(object):
 
     def add_asset(self, asset_obj):
 
+        # List of assets
         self._asset_list.append(asset_obj)
-        #self._asset_dict.update({asset_obj.config['name']: asset_obj})
 
+        # Dictionary of asset lists, grouped by asset type.
         try:
             self._asset_roster[asset_obj.config['class_type']].append(asset_obj)
         except (TypeError, KeyError):
@@ -66,26 +68,6 @@ class AssetContainer(object):
     def get_asset(self, class_type):
         return self._asset_roster[class_type]
 
-    """
-    def read(self, args):
-        resp = dict()
-        for asset_name, type_name, param_name in args:
-            try:
-                resp.update(
-                    {(asset_name, type_name, param_name): getattr(self._asset_dict[asset_name], type_name)[param_name]})
-            except KeyError:
-                logging.warning('%s: read(): %s does not exists',
-                                self.__class__.__name__, (asset_name, type_name, param_name))
-        return resp
-
-    def write(self, args):
-        for key, val in args.items():
-            try:
-                asset_name, type_name, param_name = key
-                getattr(self._asset_dict[asset_name], type_name)[param_name] = val
-            except KeyError:
-                logging.warning('%s: write(): %s does not exists', self.__class__.__name__, key)
-    """
 
 class Asset(object):
     """Basic asset in power system.
@@ -97,12 +79,13 @@ class Asset(object):
         self._config = dict()
         self._status = dict()
         self._control = dict()
+        self._remote_control = dict()
+
         self._comm_interface = None  # Communications Interface Object
 
         self._config.update({
             'name': None,
             'class_name': None,
-            'class_type': None,
             #  'freq_rated': None,
             #  'volt_rated': None,
             #  'cap_kva_rated': 0.0,
@@ -128,6 +111,12 @@ class Asset(object):
             # ' on_system': False
         })
 
+        self._remote_control.update({
+            'run_request': False,
+            'enable_request': False,
+            'clear_faults_request': False,
+        })
+
     @property
     def status(self):
         return self._status
@@ -139,6 +128,10 @@ class Asset(object):
     @property
     def config(self):
         return self._config
+
+    @property
+    def remote_control(self):
+        return self._remote_control
 
     def read_config(self, config_dict):
         for key, val in config_dict.items():
@@ -154,6 +147,7 @@ class Asset(object):
             1. Update internal dictionary from communications interface
             2. Map internal status dictionary to abstract parent interface
         """
+
         return
 
     def update_control(self):
@@ -161,6 +155,7 @@ class Asset(object):
             1. Map the abstract parent inferface to internal control dictionary
             2. Write the communications interface from internal control dictionary.
         """
+
         return
 
 
@@ -195,10 +190,18 @@ class CtrlAsset(Asset):
     def update_status(self):
         super(CtrlAsset, self).update_status()
 
+        self._status['enabled'] = self.control['enable'] and not self.status['alarm']
+
         # self.status['cap_kw_pos_avail'] = self.config['cap_kw_pos_rated'] * self.ctrl['enabled']
         # self.status['cap_kw_neg_avail'] = self.config['cap_kw_neg_rated'] * self.ctrl['enabled']
         # self.status['cap_kvar_pos_avail'] = self.config['cap_kvar_pos_rated'] * self.ctrl['enabled']
         # self.status['cap_kvar_neg_avail'] = self.config['cap_kvar_neg_rated'] * self.ctrl['enabled']
+
+    def update_control(self):
+        super(CtrlAsset, self).update_control()
+
+        self._control['enable'] = self.remote_control['enable_request']
+        self._control['clear_faults'] = self.remote_control['clear_faults_request']
 
 
 class GridIntertie(CtrlAsset):
@@ -221,6 +224,10 @@ class GridIntertie(CtrlAsset):
 class EnergyStorage(CtrlAsset):
     """Energy persistence archetype object
     """
+    class State(Enum):
+        STANDBY = 0
+        PQ = 1
+        VF = 2
 
     def __init__(self):
         super(EnergyStorage, self).__init__()
@@ -228,7 +235,8 @@ class EnergyStorage(CtrlAsset):
             'soc': 0.0
         })
         self._control.update({
-            'kw_setpoint': 0.0
+            'kw_setpoint': 0.0,
+            'state_cmd': EnergyStorage.State.STANDBY.value
         })
 
         self._config.update({
