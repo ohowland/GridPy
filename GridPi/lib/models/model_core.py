@@ -96,8 +96,8 @@ class Asset(object):
         })
 
         self._status.update({
-            'freq': 0.0,
-            'volt': 0.0,
+            'frequency': 0.0,
+            'voltage': 0.0,
             'kw': 0.0,
             'kvar': 0.0,
             #  'cap_kw_pos_avail': 0.0,

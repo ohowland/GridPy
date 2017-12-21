@@ -183,6 +183,9 @@ class OnlinePQ(model_statemachine.State):
         kw_setpoint = getattr(sm_input, 'kw_setpoint')
         setattr(sm_output, 'kw', kw_setpoint)
 
+        """ Voltage / Frequency"""
+        setattr(sm_output, 'volt')
+
         logging.debug('VirtualEnergyStorage.StateMachine.State output: %s', sm_output.__dict__)
         return sm_output
 

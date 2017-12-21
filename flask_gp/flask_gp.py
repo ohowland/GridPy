@@ -7,7 +7,7 @@ app.config.from_object(__name__) # load config from this file, flaskr.py
 
 # Load default config and override config from an environment variable
 app.config.update(dict(
-    DATABASE=(Path.cwd().parent / Path('GridPi/gridpi.sqlite')).as_posix(),
+    DATABASE=(Path.cwd().parent / Path('gridpi.sqlite')).as_posix(),
     SECRET_KEY='development key',
     USERNAME='admin',
     PASSWORD='default'
