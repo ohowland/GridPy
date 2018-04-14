@@ -1,3 +1,3 @@
 # GridPi
 
-Currently under development. GridPi is a distributed microgrid control framework, currently tested on a RaspberryPi.
+Local power system dispatch controller. Run on a RaspberryPi.
