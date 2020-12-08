@@ -1,6 +1,6 @@
 # GridPi
 
-## Post-Mortem - 9/27/20
+## update - 9/27/20
 
 ### Objective
 This project was largely an exploration of a modular power system dispatch design. The core problem that prompted it was that every microgrid I'd encoutered had its own set of control objectives. Power systems share many of the same goals, but depending on the architecture they achieve those goals (or a subset of goals) differently. The idea was break the high-level control system into modular pieces, and construct a dispatch control tree/pipeline based on what pieces were loaded.
