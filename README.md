@@ -1,4 +1,4 @@
-# GridPi
+# GridPy
 
 ## update - 9/27/20
 
